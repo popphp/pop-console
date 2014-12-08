@@ -35,12 +35,6 @@ class Response
     protected $body = null;
 
     /**
-     * Response sent flag
-     * @var boolean
-     */
-    protected $sent = false;
-
-    /**
      * Instantiate a new console response object
      *
      * @param  string $body
@@ -66,14 +60,14 @@ class Response
     }
 
     /**
-     * Append to the response body
+     * Append text to the response body
      *
-     * @param  string $body
+     * @param  string $text
      * @return Response
      */
-    public function append($body)
+    public function append($text)
     {
-        $this->body .= $body;
+        $this->body .= $text;
         return $this;
     }
 
@@ -88,40 +82,14 @@ class Response
     }
 
     /**
-     * Get the response sent flag
-     *
-     * @return boolean
-     */
-    public function sent()
-    {
-        return $this->sent;
-    }
-
-    /**
-     * Reset the response object
-     *
-     * @return Response
-     */
-    public function reset()
-    {
-        $this->body = null;
-        $this->sent = false;
-        return $this;
-    }
-
-    /**
      * Send the response
      *
      * @return Response
      */
     public function send()
     {
-        if ($this->sent) {
-            return $this;
-        }
-
         echo $this->body;
-        $this->sent = true;
+        $this->body = null;
         return $this;
     }
 
