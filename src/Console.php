@@ -25,7 +25,7 @@ namespace Pop\Console;
  * @license    http://www.popphp.org/license     New BSD License
  * @version    2.0.0a
  */
-class Console
+class Console implements \ArrayAccess
 {
 
     /**
@@ -68,22 +68,22 @@ class Console
     protected $width = 80;
 
     /**
-     * Console arguments
-     * @var array
-     */
-    protected $arguments = [];
-
-    /**
      * Console options names/settings
      * @var array
      */
     protected $optionNames = [];
 
     /**
+     * Console arguments
+     * @var array
+     */
+    protected $arguments = [];
+
+    /**
      * Parsed option values
      * @var array
      */
-    protected $optionValues = [];
+    protected $options = [];
 
     /**
      * Color map of ansi values
@@ -126,13 +126,17 @@ class Console
     /**
      * Instantiate a new console object
      *
-     * @param  int $width
+     * @param  array $options
+     * @param  int   $width
      * @return Console
      */
-    public function __construct($width = 80)
+    public function __construct(array $options = null, $width = 80)
     {
         $this->request  = new Request();
         $this->response = new Response();
+        if (null !== $options) {
+            $this->addOptions($options);
+        }
         $this->setWidth($width);
     }
 
@@ -218,6 +222,17 @@ class Console
     }
 
     /**
+     * Determine if an argument exists
+     *
+     * @param  string $arg
+     * @return boolean
+     */
+    public function hasArgument($arg)
+    {
+        return isset($this->arguments[$arg]);
+    }
+
+    /**
      * Get an option value
      *
      * @param  string $opt
@@ -228,7 +243,7 @@ class Console
         if (!$this->request->isParsed()) {
             $this->parseRequest();
         }
-        return (isset($this->optionValues[$opt])) ? $this->optionValues[$opt] : null;
+        return (isset($this->options[$opt])) ? $this->options[$opt] : null;
     }
 
     /**
@@ -241,7 +256,18 @@ class Console
         if (!$this->request->isParsed()) {
             $this->parseRequest();
         }
-        return $this->optionValues;
+        return $this->options;
+    }
+
+    /**
+     * Determine if an option exists
+     *
+     * @param  string $opt
+     * @return boolean
+     */
+    public function hasOption($opt)
+    {
+        return isset($this->options[$opt]);
     }
 
     /**
@@ -266,8 +292,8 @@ class Console
     {
         $this->request->parse($this->optionNames);
         if ($this->request->isValid()) {
-            $this->optionValues = $this->request->getOptions();
-            $this->arguments    = $this->request->getArguments();
+            $this->options   = $this->request->getOptions();
+            $this->arguments = $this->request->getArguments();
         }
     }
 
@@ -383,6 +409,74 @@ class Console
     public function clear()
     {
         echo chr(27) . "[2J" . chr(27) . "[;H";
+    }
+
+    /**
+     * ArrayAccess offsetExists
+     *
+     * @param  mixed $offset
+     * @return boolean
+     */
+    public function offsetExists($offset)
+    {
+        return $this->__isset($offset);
+    }
+
+    /**
+     * ArrayAccess offsetGet
+     *
+     * @param  mixed $offset
+     * @return mixed
+     */
+    public function offsetGet($offset)
+    {
+        return $this->getOption($offset);
+    }
+
+    /**
+     * ArrayAccess offsetSet
+     *
+     * @param  mixed $offset
+     * @param  mixed $value
+     * @throws Exception
+     * @return void
+     */
+    public function offsetSet($offset, $value)
+    {
+        throw new Exception('Error: Console parameter overrides are not allowed.');
+    }
+
+    /**
+     * ArrayAccess offsetUnset
+     *
+     * @param  mixed $offset
+     * @throws Exception
+     * @return void
+     */
+    public function offsetUnset($offset)
+    {
+        throw new Exception('Error: Console parameter overrides are not allowed.');
+    }
+    /**
+     * Magic get method to return the value of config[$name].
+     *
+     * @param  string $name
+     * @return mixed
+     */
+    public function __get($name)
+    {
+        return $this->getOption($name);
+    }
+
+    /**
+     * Return the isset value of config[$name].
+     *
+     * @param  string $name
+     * @return boolean
+     */
+    public function __isset($name)
+    {
+        return isset($this->options[$name]);
     }
 
 }
