@@ -50,17 +50,17 @@ class Option extends AbstractInput
      * Instantiate a new command object
      *
      * @param  string  $name
-     * @param  boolean $required
      * @param  string  $valueMode
+     * @param  boolean $required
      * @return Option
      */
-    public function __construct($name, $required = false, $valueMode = null)
+    public function __construct($name, $valueMode = null, $required = false)
     {
         $this->setName($name);
-        $this->setRequired($required);
         if (null !== $valueMode) {
             $this->setValueMode($valueMode);
         }
+        $this->setRequired($required);
     }
 
     /**

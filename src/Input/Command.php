@@ -41,18 +41,26 @@ class Command extends AbstractInput
     protected $help = null;
 
     /**
+     * Command override flag
+     * @var boolean
+     */
+    protected $override = false;
+
+    /**
      * Instantiate a new command object
      *
-     * @param  string $name
+     * @param  string  $name
      * @param  string  $valueMode
+     * @param  boolean $override
      * @return Command
      */
-    public function __construct($name, $valueMode = null)
+    public function __construct($name, $valueMode = null, $override = false)
     {
         $this->setName($name);
         if (null !== $valueMode) {
             $this->setValueMode($valueMode);
         }
+        $this->setOverride($override);
     }
 
     /**
@@ -64,6 +72,18 @@ class Command extends AbstractInput
     public function setName($name)
     {
         $this->name = $name;
+        return $this;
+    }
+
+    /**
+     * Set if the command is override
+     *
+     * @param  boolean $override
+     * @return Command
+     */
+    public function setOverride($override)
+    {
+        $this->override = (bool)$override;
         return $this;
     }
 
@@ -97,6 +117,16 @@ class Command extends AbstractInput
     public function getHelp()
     {
         return $this->help;
+    }
+
+    /**
+     * Determine whether the command is override
+     *
+     * @return boolean
+     */
+    public function isOverride()
+    {
+        return $this->override;
     }
 
 }

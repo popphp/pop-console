@@ -82,6 +82,17 @@ class Response
     }
 
     /**
+     * Reset the response
+     *
+     * @return Response
+     */
+    public function reset()
+    {
+        $this->body = null;
+        return $this;
+    }
+
+    /**
      * Send the response
      *
      * @return Response

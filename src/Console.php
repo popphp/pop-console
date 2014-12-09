@@ -25,7 +25,7 @@ namespace Pop\Console;
  * @license    http://www.popphp.org/license     New BSD License
  * @version    2.0.0a
  */
-class Console
+class Console implements \ArrayAccess
 {
 
     /**
@@ -66,12 +66,6 @@ class Console
      * @var int
      */
     protected $width = 80;
-
-    /**
-     * Console arguments
-     * @var array
-     */
-    protected $arguments = [];
 
     /**
      * Command objects
@@ -126,21 +120,13 @@ class Console
     /**
      * Instantiate a new console object
      *
-     * @param  array $commands
-     * @param  array $options
-     * @param  int   $width
+     * @param  int $width
      * @return Console
      */
-    public function __construct(array $commands = null, array $options = null, $width = 80)
+    public function __construct($width = 80)
     {
         $this->request  = new Request();
         $this->response = new Response();
-        if (null !== $commands) {
-            $this->addCommands($commands);
-        }
-        if (null !== $options) {
-            $this->addOptions($options);
-        }
         $this->setWidth($width);
     }
 
@@ -220,8 +206,12 @@ class Console
      */
     public function addOption(Input\Option $option)
     {
-        $name = ($option->hasLongName()) ? $option->getLongName() : $option->getShortName();
-        $this->options[$name] = $option;
+        if ($option->hasLongName()) {
+            $this->options[$option->getLongName()] = $option;
+        }
+        if ($option->hasShortName()) {
+            $this->options[$option->getShortName()] = $option;
+        }
         return $this;
     }
 
@@ -249,7 +239,7 @@ class Console
         if (!$this->request->isParsed()) {
             $this->parseRequest();
         }
-        return $this->arguments;
+        return $this->request->getArguments();
     }
 
     /**
@@ -260,21 +250,58 @@ class Console
      */
     public function hasArgument($arg)
     {
-        return isset($this->arguments[$arg]);
+        return (null !== $this->request->getArgument($arg));
     }
 
     /**
-     * Get a command value
+     * Get a command or option value
+     *
+     * @param  string $name
+     * @return mixed
+     */
+    public function get($name)
+    {
+        if (!$this->request->isParsed()) {
+            $this->parseRequest();
+        }
+
+        $value = null;
+
+        if (isset($this->commands[$name])) {
+            $value = $this->commands[$name]->getValue();
+        } else if (isset($this->options[$name])) {
+            $value = $this->options[$name]->getValue();
+        }
+
+        return $value;
+    }
+
+    /**
+     * Determine if a command object exists
      *
      * @param  string $command
-     * @return mixed
+     * @return boolean
+     */
+    public function hasCommand($command)
+    {
+        if (!$this->request->isParsed()) {
+            $this->parseRequest();
+        }
+        return (isset($this->commands[$command]));
+    }
+
+    /**
+     * Get a command object
+     *
+     * @param  string $command
+     * @return Input\Command
      */
     public function getCommand($command)
     {
         if (!$this->request->isParsed()) {
             $this->parseRequest();
         }
-        return (isset($this->commands[$command])) ? $this->commands[$command]->getValue() : null;
+        return (isset($this->commands[$command])) ? $this->commands[$command] : null;
     }
 
     /**
@@ -291,17 +318,31 @@ class Console
     }
 
     /**
-     * Get an option value
+     * Determine if an option object exists
      *
      * @param  string $option
-     * @return mixed
+     * @return boolean
+     */
+    public function hasOption($option)
+    {
+        if (!$this->request->isParsed()) {
+            $this->parseRequest();
+        }
+        return (isset($this->options[$option]));
+    }
+
+    /**
+     * Get an option object
+     *
+     * @param  string $option
+     * @return Input\Command
      */
     public function getOption($option)
     {
         if (!$this->request->isParsed()) {
             $this->parseRequest();
         }
-        return (isset($this->options[$option])) ? $this->options[$option]->getValue() : null;
+        return (isset($this->options[$option])) ? $this->commands[$option] : null;
     }
 
     /**
@@ -331,28 +372,6 @@ class Console
     }
 
     /**
-     * Determine if a command exists
-     *
-     * @param  string $command
-     * @return boolean
-     */
-    public function hasCommand($command)
-    {
-        return isset($this->commands[$command]);
-    }
-
-    /**
-     * Determine if an option exists
-     *
-     * @param  string $option
-     * @return boolean
-     */
-    public function hasOption($option)
-    {
-        return isset($this->options[$option]);
-    }
-
-    /**
      * Determine if the request is valid
      *
      * @return boolean
@@ -373,11 +392,6 @@ class Console
     public function parseRequest()
     {
         $this->request->parse($this->commands, $this->options);
-        if ($this->request->isValid()) {
-            $this->commands  = $this->request->getCommands();
-            $this->options   = $this->request->getOptions();
-            $this->arguments = $this->request->getArguments();
-        }
     }
 
     /**
@@ -393,7 +407,7 @@ class Console
         $fgColor = $this->getColorCode($fg, 'foreground');
         $bgColor = $this->getColorCode($bg, 'background');
         return ($fgColor !== null ? "\x1b[" . $fgColor   . 'm' : '') .
-        ($bgColor !== null ? "\x1b[" . $bgColor . 'm' : '') . $string . "\x1b[22;39m\x1b[0;49m";
+            ($bgColor !== null ? "\x1b[" . $bgColor . 'm' : '') . $string . "\x1b[22;39m\x1b[0;49m";
     }
 
     /**
@@ -492,6 +506,76 @@ class Console
     public function clear()
     {
         echo chr(27) . "[2J" . chr(27) . "[;H";
+    }
+
+    /**
+     * Magic get method to return the a parameter value
+     *
+     * @param  string $name
+     * @return mixed
+     */
+    public function __get($name)
+    {
+        return $this->get($name);
+    }
+
+    /**
+     * Return the isset value of a parameter value
+     *
+     * @param  string $name
+     * @return boolean
+     */
+    public function __isset($name)
+    {
+        return (isset($this->commands[$name]) || isset($this->options[$name]));
+    }
+
+
+    /**
+     * ArrayAccess offsetExists
+     *
+     * @param  mixed $offset
+     * @return boolean
+     */
+    public function offsetExists($offset)
+    {
+        return $this->__isset($offset);
+    }
+
+    /**
+     * ArrayAccess offsetGet
+     *
+     * @param  mixed $offset
+     * @return mixed
+     */
+    public function offsetGet($offset)
+    {
+        return $this->get($offset);
+    }
+
+    /**
+     * ArrayAccess offsetSet
+     *
+     * @param  mixed $offset
+     * @param  mixed $value
+     * @throws Exception
+     * @return void
+     */
+    public function offsetSet($offset, $value)
+    {
+        throw new Exception('Error: The parameters of the console cannot be set.');
+    }
+
+    /**
+     * ArrayAccess offsetUnset
+     *
+     * @param  mixed $offset
+     * @throws Exception
+     * @return void
+     */
+    public function offsetUnset($offset)
+    {
+        throw new Exception('Error: The parameters of the console cannot be unset.');
     }
 
 }

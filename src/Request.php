@@ -47,18 +47,6 @@ class Request
     protected $scriptName = null;
 
     /**
-     * Console command objects
-     * @var array
-     */
-    protected $commands = [];
-
-    /**
-     * Console option objects
-     * @var array
-     */
-    protected $options = [];
-
-    /**
      * Required parameters that were not passed
      * @var array
      */
@@ -138,26 +126,6 @@ class Request
     }
 
     /**
-     * Get the commands
-     *
-     * @return array
-     */
-    public function getCommands()
-    {
-        return $this->commands;
-    }
-
-    /**
-     * Get the options
-     *
-     * @return array
-     */
-    public function getOptions()
-    {
-        return $this->options;
-    }
-
-    /**
      * Determine if the request is valid
      *
      * @return boolean
@@ -197,72 +165,86 @@ class Request
     public function parse(array $commands = [], array $options = [])
     {
         foreach ($options as $name => $option) {
-            $required      = $option->isRequired();
-            $valueOptional = $option->isValueOptional();
-            $valueRequired = $option->isValueRequired();
-            $valueIsArray  = $option->isValueArray();
-            $longOption    = false;
+            if (null === $option->getValue()) {
+                $required      = $option->isRequired();
+                $valueOptional = $option->isValueOptional();
+                $valueRequired = $option->isValueRequired();
+                $valueIsArray  = $option->isValueArray();
+                $longOption    = false;
 
-            $optionsAry    = [];
-            $optionFound   = false;
+                $optionsAry  = [];
+                $optionFound = false;
 
-            foreach ($this->args as $key => $arg) {
-                if (($option->hasLongName()) && ($option->hasShortName())) {
-                    $optionsAry[$option->getShortName()] = substr($option->getShortName(), 1);
-                    $optionsAry[$option->getLongName()] = substr($option->getLongName(), 2);
-                    $longOption  = true;
-                } else if ($option->hasLongName()) {
-                    $optionsAry[$option->getLongName()] = substr($option->getLongName(), 2);
-                    $longOption = true;
-                } else {
-                    $optionsAry[$option->getShortName()] = substr($option->getShortName(), 1);
-                }
-
-                foreach ($optionsAry as $opt => $name) {
-                    if (substr($arg, 0, strlen($opt)) == $opt) {
-                        $optionFound = true;
-                        // Has value
-                        if (($valueOptional) || ($valueRequired)) {
-                            if (($longOption) && (strpos($arg, '=') !== false)) {
-                                $optionValue = substr($arg, (strpos($arg, '=') + 1));
-                            } else {
-                                $optionValue = (strlen($arg) > strlen($opt)) ?
-                                    substr($arg, strlen($opt)) : '';
-                            }
-
-                            // If value is an array
-                            if ($valueIsArray) {
-                                $optionValue = (strpos($optionValue, ',') !== false) ? explode(',', $optionValue) : [$optionValue];
-                            }
-
-                            // If option is required or value is required, set fail
-                            if ((($required) || ($valueRequired)) && (($optionValue == '') || (is_array($optionValue) && isset($optionValue[0]) && empty($optionValue[0])))) {
-                                $optionFound = false;
-                            }
+                if (count($this->args) > 0) {
+                    foreach ($this->args as $key => $arg) {
+                        if (($option->hasLongName()) && ($option->hasShortName())) {
+                            $optionsAry[$option->getShortName()] = substr($option->getShortName(), 1);
+                            $optionsAry[$option->getLongName()] = substr($option->getLongName(), 2);
+                            $longOption = true;
+                        } else if ($option->hasLongName()) {
+                            $optionsAry[$option->getLongName()] = substr($option->getLongName(), 2);
+                            $longOption = true;
                         } else {
-                            $optionValue = true;
+                            $optionsAry[$option->getShortName()] = substr($option->getShortName(), 1);
                         }
 
-                        if ($optionFound) {
-                            $option->setValue($optionValue);
-                            $this->options[$name] = $option;
+                        foreach ($optionsAry as $opt => $name) {
+                            if (substr($arg, 0, strlen($opt)) == $opt) {
+                                $optionFound = true;
+                                // Has value
+                                if (($valueOptional) || ($valueRequired)) {
+                                    if (($longOption) && (strpos($arg, '=') !== false)) {
+                                        $optionValue = substr($arg, (strpos($arg, '=') + 1));
+                                    } else {
+                                        $optionValue = (strlen($arg) > strlen($opt)) ?
+                                            substr($arg, strlen($opt)) : '';
+                                    }
 
-                            if (($option->hasLongName()) && ($option->hasShortName())) {
-                                if ($option->getShortName() == '-' . $name) {
-                                    $this->options[substr($option->getLongName(), 2)] = $option;
-                                } else if ($option->getLongName() == '--' . $name) {
-                                    $this->options[substr($option->getShortName(), 1)] = $option;
+                                    // If value is an array
+                                    if ($valueIsArray) {
+                                        $optionValue = (strpos($optionValue, ',') !== false) ? explode(',', $optionValue) : [$optionValue];
+                                    }
+
+                                    // If option is required or value is required, set fail
+                                    if ((($required) || ($valueRequired)) && (($optionValue == '') || (is_array($optionValue) && isset($optionValue[0]) && empty($optionValue[0])))) {
+                                        $optionFound = false;
+                                    }
+                                } else {
+                                    $optionValue = true;
+                                }
+                                if ($optionFound) {
+                                    if ($optionValue == '') {
+                                        $optionValue = true;
+                                    }
+                                    $option->setValue($optionValue);
+                                    unset($this->args[$key]);
                                 }
                             }
-
-                            unset($this->args[$key]);
                         }
                     }
-                }
-            }
 
-            if (($required) && !($optionFound)) {
-                $this->requiredParamsNotFound[] = ($option->hasLongName()) ? $option->getLongName() : $option->getShortName();
+                    if (!($optionFound)) {
+                        $reqOptName = null;
+                        if (($option->hasShortName()) && ($option->hasLongName())) {
+                            $reqOptName = $option->getShortName() . '|' . $option->getLongName();
+                        } else {
+                            $reqOptName = ($option->hasLongName()) ? $option->getLongName() : $option->getShortName();
+                        }
+                        if (!in_array($reqOptName, $this->requiredParamsNotFound)) {
+                            $this->requiredParamsNotFound[] = $reqOptName;
+                        }
+                    }
+                } else if ($required) {
+                    $reqOptName = null;
+                    if (($option->hasShortName()) && ($option->hasLongName())) {
+                        $reqOptName = $option->getShortName() . '|' . $option->getLongName();
+                    } else {
+                        $reqOptName = ($option->hasLongName()) ? $option->getLongName() : $option->getShortName();
+                    }
+                    if (!in_array($reqOptName, $this->requiredParamsNotFound)) {
+                        $this->requiredParamsNotFound[] = $reqOptName;
+                    }
+                }
             }
         }
 
@@ -273,8 +255,12 @@ class Request
         }
         $this->args = $args;
 
+        $isOverride = false;
         foreach ($commands as $name => $command) {
             if (in_array($name, $this->args)) {
+                if ($command->isOverride()) {
+                    $isOverride = true;
+                }
                 // Has value
                 if (($command->isValueOptional()) || ($command->isValueRequired())) {
                     $key = array_search($name, $this->args);
@@ -288,13 +274,19 @@ class Request
                     if (($command->isValueRequired()) && (($value == '') || (is_array($value) && isset($value[0]) && empty($value[0])))) {
                         $this->requiredParamsNotFound[] = $name;
                     } else {
+                        if ($value == '') {
+                            $value = true;
+                        }
                         $command->setValue($value);
                     }
                 } else {
                     $command->setValue(true);
                 }
-                $this->commands[$name] = $command;
             }
+        }
+
+        if ($isOverride) {
+            $this->requiredParamsNotFound = [];
         }
 
         $this->parsed = true;
