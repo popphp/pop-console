@@ -25,7 +25,7 @@ namespace Pop\Console;
  * @license    http://www.popphp.org/license     New BSD License
  * @version    2.0.0a
  */
-class Console implements \ArrayAccess
+class Console
 {
 
     /**
@@ -68,19 +68,19 @@ class Console implements \ArrayAccess
     protected $width = 80;
 
     /**
-     * Console options names/settings
-     * @var array
-     */
-    protected $optionNames = [];
-
-    /**
      * Console arguments
      * @var array
      */
     protected $arguments = [];
 
     /**
-     * Parsed option values
+     * Command objects
+     * @var array
+     */
+    protected $commands = [];
+
+    /**
+     * Option objects
      * @var array
      */
     protected $options = [];
@@ -126,14 +126,18 @@ class Console implements \ArrayAccess
     /**
      * Instantiate a new console object
      *
+     * @param  array $commands
      * @param  array $options
      * @param  int   $width
      * @return Console
      */
-    public function __construct(array $options = null, $width = 80)
+    public function __construct(array $commands = null, array $options = null, $width = 80)
     {
         $this->request  = new Request();
         $this->response = new Response();
+        if (null !== $commands) {
+            $this->addCommands($commands);
+        }
         if (null !== $options) {
             $this->addOptions($options);
         }
@@ -183,27 +187,54 @@ class Console implements \ArrayAccess
     }
 
     /**
-     * Add an option
+     * Add a command
      *
-     * @param  string $opt
+     * @param  Input\Command $command
      * @return Console
      */
-    public function addOption($opt)
+    public function addCommand(Input\Command $command)
     {
-        $this->optionNames[] = $opt;
+        $this->commands[$command->getName()] = $command;
+        return $this;
+    }
+
+    /**
+     * Add commands
+     *
+     * @param  array $commands
+     * @return Console
+     */
+    public function addCommands(array $commands)
+    {
+        foreach ($commands as $command) {
+            $this->addCommand($command);
+        }
+        return $this;
+    }
+
+    /**
+     * Add an option
+     *
+     * @param  Input\Option $option
+     * @return Console
+     */
+    public function addOption(Input\Option $option)
+    {
+        $name = ($option->hasLongName()) ? $option->getLongName() : $option->getShortName();
+        $this->options[$name] = $option;
         return $this;
     }
 
     /**
      * Add options
      *
-     * @param  array $opts
+     * @param  array $options
      * @return Console
      */
-    public function addOptions(array $opts)
+    public function addOptions(array $options)
     {
-        foreach ($opts as $opt) {
-            $this->addOption($opt);
+        foreach ($options as $option) {
+            $this->addOption($option);
         }
         return $this;
     }
@@ -233,17 +264,44 @@ class Console implements \ArrayAccess
     }
 
     /**
-     * Get an option value
+     * Get a command value
      *
-     * @param  string $opt
+     * @param  string $command
      * @return mixed
      */
-    public function getOption($opt)
+    public function getCommand($command)
     {
         if (!$this->request->isParsed()) {
             $this->parseRequest();
         }
-        return (isset($this->options[$opt])) ? $this->options[$opt] : null;
+        return (isset($this->commands[$command])) ? $this->commands[$command]->getValue() : null;
+    }
+
+    /**
+     * Get commands
+     *
+     * @return array
+     */
+    public function getCommands()
+    {
+        if (!$this->request->isParsed()) {
+            $this->parseRequest();
+        }
+        return $this->commands;
+    }
+
+    /**
+     * Get an option value
+     *
+     * @param  string $option
+     * @return mixed
+     */
+    public function getOption($option)
+    {
+        if (!$this->request->isParsed()) {
+            $this->parseRequest();
+        }
+        return (isset($this->options[$option])) ? $this->options[$option]->getValue() : null;
     }
 
     /**
@@ -260,14 +318,38 @@ class Console implements \ArrayAccess
     }
 
     /**
-     * Determine if an option exists
+     * Get required parameters that were not found
      *
-     * @param  string $opt
+     * @return array
+     */
+    public function getRequiredParamsNotFound()
+    {
+        if (!$this->request->isParsed()) {
+            $this->parseRequest();
+        }
+        return $this->request->getRequiredParamsNotFound();
+    }
+
+    /**
+     * Determine if a command exists
+     *
+     * @param  string $command
      * @return boolean
      */
-    public function hasOption($opt)
+    public function hasCommand($command)
     {
-        return isset($this->options[$opt]);
+        return isset($this->commands[$command]);
+    }
+
+    /**
+     * Determine if an option exists
+     *
+     * @param  string $option
+     * @return boolean
+     */
+    public function hasOption($option)
+    {
+        return isset($this->options[$option]);
     }
 
     /**
@@ -290,8 +372,9 @@ class Console implements \ArrayAccess
      */
     public function parseRequest()
     {
-        $this->request->parse($this->optionNames);
+        $this->request->parse($this->commands, $this->options);
         if ($this->request->isValid()) {
+            $this->commands  = $this->request->getCommands();
             $this->options   = $this->request->getOptions();
             $this->arguments = $this->request->getArguments();
         }
@@ -409,74 +492,6 @@ class Console implements \ArrayAccess
     public function clear()
     {
         echo chr(27) . "[2J" . chr(27) . "[;H";
-    }
-
-    /**
-     * ArrayAccess offsetExists
-     *
-     * @param  mixed $offset
-     * @return boolean
-     */
-    public function offsetExists($offset)
-    {
-        return $this->__isset($offset);
-    }
-
-    /**
-     * ArrayAccess offsetGet
-     *
-     * @param  mixed $offset
-     * @return mixed
-     */
-    public function offsetGet($offset)
-    {
-        return $this->getOption($offset);
-    }
-
-    /**
-     * ArrayAccess offsetSet
-     *
-     * @param  mixed $offset
-     * @param  mixed $value
-     * @throws Exception
-     * @return void
-     */
-    public function offsetSet($offset, $value)
-    {
-        throw new Exception('Error: Console parameter overrides are not allowed.');
-    }
-
-    /**
-     * ArrayAccess offsetUnset
-     *
-     * @param  mixed $offset
-     * @throws Exception
-     * @return void
-     */
-    public function offsetUnset($offset)
-    {
-        throw new Exception('Error: Console parameter overrides are not allowed.');
-    }
-    /**
-     * Magic get method to return the value of config[$name].
-     *
-     * @param  string $name
-     * @return mixed
-     */
-    public function __get($name)
-    {
-        return $this->getOption($name);
-    }
-
-    /**
-     * Return the isset value of config[$name].
-     *
-     * @param  string $name
-     * @return boolean
-     */
-    public function __isset($name)
-    {
-        return isset($this->options[$name]);
     }
 
 }
