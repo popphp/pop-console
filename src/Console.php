@@ -404,10 +404,14 @@ class Console implements \ArrayAccess
      */
     public function colorize($string, $fg = null, $bg = null)
     {
-        $fgColor = $this->getColorCode($fg, 'foreground');
-        $bgColor = $this->getColorCode($bg, 'background');
-        return ($fgColor !== null ? "\x1b[" . $fgColor   . 'm' : '') .
+        if (stripos(PHP_OS, 'win') === false) {
+            $fgColor = $this->getColorCode($fg, 'foreground');
+            $bgColor = $this->getColorCode($bg, 'background');
+            return ($fgColor !== null ? "\x1b[" . $fgColor . 'm' : '') .
             ($bgColor !== null ? "\x1b[" . $bgColor . 'm' : '') . $string . "\x1b[22;39m\x1b[0;49m";
+        } else {
+            return $string;
+        }
     }
 
     /**
