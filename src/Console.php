@@ -538,7 +538,6 @@ class Console implements \ArrayAccess
         return (isset($this->commands[$name]) || isset($this->options[$name]));
     }
 
-
     /**
      * ArrayAccess offsetExists
      *
