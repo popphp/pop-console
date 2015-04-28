@@ -482,7 +482,7 @@ class Console implements \ArrayAccess
      */
     public function write($text, $indent = null)
     {
-        if ($this->wisth != 0) {
+        if ($this->width != 0) {
             $lines = (strlen($text) > $this->width) ?
                 explode(PHP_EOL, wordwrap($text, $this->width, PHP_EOL)) : [$text];
         } else {

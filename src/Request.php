@@ -202,11 +202,13 @@ class Request
 
                                     // If value is an array
                                     if ($valueIsArray) {
-                                        $optionValue = (strpos($optionValue, ',') !== false) ? explode(',', $optionValue) : [$optionValue];
+                                        $optionValue = (strpos($optionValue, ',') !== false) ?
+                                            explode(',', $optionValue) : [$optionValue];
                                     }
 
                                     // If option is required or value is required, set fail
-                                    if ((($required) || ($valueRequired)) && (($optionValue == '') || (is_array($optionValue) && isset($optionValue[0]) && empty($optionValue[0])))) {
+                                    if ((($required) || ($valueRequired)) && (($optionValue == '') ||
+                                            (is_array($optionValue) && isset($optionValue[0]) && empty($optionValue[0])))) {
                                         $optionFound = false;
                                     }
                                 } else {
@@ -271,7 +273,8 @@ class Request
                         $value = (strpos($value, ',') !== false) ? explode(',', $value) : [$value];
                     }
 
-                    if (($command->isValueRequired()) && (($value == '') || (is_array($value) && isset($value[0]) && empty($value[0])))) {
+                    if (($command->isValueRequired()) && (($value == '') ||
+                            (is_array($value) && isset($value[0]) && empty($value[0])))) {
                         $this->requiredParamsNotFound[] = $name;
                     } else {
                         if ($value == '') {
