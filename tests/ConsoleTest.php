@@ -139,14 +139,30 @@ class ConsoleTest extends \PHPUnit_Framework_TestCase
         $this->assertContains('[41m', $string);
         $this->assertContains('[22;39m', $string);
         $this->assertContains('[0;49m', $string);
+    }
 
-        //ob_start();
-        $console->write($string);
+    public function testBadColor()
+    {
+        $console = new Console();
+        $string = $console->colorize('Hello World', 'BAD_FG', 'BAD_BG');
+        $this->assertContains('Hello World', $string);
     }
 
     public function testWrite()
     {
         $console = new Console();
+        $console->write('Hello World');
+
+        ob_start();
+        $console->send();
+        $result = ob_get_clean();
+
+        $this->assertEquals('Hello World' . PHP_EOL, $result);
+    }
+
+    public function testWriteZero()
+    {
+        $console = new Console(0);
         $console->write('Hello World');
 
         ob_start();

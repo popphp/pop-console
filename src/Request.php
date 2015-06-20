@@ -112,7 +112,7 @@ class Request
      */
     public function getEnvs()
     {
-        $this->env;
+        return $this->env;
     }
 
     /**
@@ -122,7 +122,7 @@ class Request
      */
     public function getScriptName()
     {
-        $this->scriptName;
+        return $this->scriptName;
     }
 
     /**
