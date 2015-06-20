@@ -76,12 +76,12 @@ class Request
     /**
      * Get a value from arguments array
      *
-     * @param  string $key
-     * @return mixed
+     * @param  string $arg
+     * @return boolean
      */
-    public function getArgument($key)
+    public function hasArgument($arg)
     {
-        return (isset($this->args[$key])) ? $this->args[$key] : null;
+        return in_array($arg, $this->args);
     }
 
     /**

@@ -250,7 +250,7 @@ class Console implements \ArrayAccess
      */
     public function hasArgument($arg)
     {
-        return (null !== $this->request->getArgument($arg));
+        return $this->request->hasArgument($arg);
     }
 
     /**
@@ -335,14 +335,14 @@ class Console implements \ArrayAccess
      * Get an option object
      *
      * @param  string $option
-     * @return Input\Command
+     * @return Input\Option
      */
     public function getOption($option)
     {
         if (!$this->request->isParsed()) {
             $this->parseRequest();
         }
-        return (isset($this->options[$option])) ? $this->commands[$option] : null;
+        return (isset($this->options[$option])) ? $this->options[$option] : null;
     }
 
     /**
