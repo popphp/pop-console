@@ -40,7 +40,10 @@ $console->addCommand($command);
 $console->parseRequest();
 
 if ($console->request()->hasArgument('help')) {
-    $help = $console->colorize($console->getCommand('help')->getHelp(), Console::BOLD_YELLOW);
+    $help = $console->colorize(
+        $console->getCommand('help')->getHelp(),
+        Console::BOLD_YELLOW
+    );
     $console->write($help);
     $console->send();
 } else if ($console->request()->hasArgument('users')) {
