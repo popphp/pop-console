@@ -56,4 +56,4 @@ Then, we run the following commands:
 This is a pretty barebones example. Ideally, you could wire an application to
 use the console but setting routes, controllers and actions. Refer to the
 [Pop PHP Skeleton](https://github.com/popphp/popphp-skeleton) example application
-to see how to wire up a console-based application.
+to see how to wire up a console-based application using Pop PHP.
