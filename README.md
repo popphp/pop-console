@@ -29,21 +29,14 @@ In this simple example, we create a script called `pop` and set the following:
 use Pop\Console\Console;
 use Pop\Console\Input;
 
-$option  = new Input\Option('-l|--list');
-$command = new Input\Command('help');
-$command->setHelp('This is the help screen.');
-
 $console = new Console();
-$console->addOption($option);
-$console->addCommand($command);
+$console->addOption(new Input\Option('-l|--list'));
+$console->addCommand(new Input\Command('help'));
 
 $console->parseRequest();
 
 if ($console->request()->hasArgument('help')) {
-    $help = $console->colorize(
-        $console->getCommand('help')->getHelp(),
-        Console::BOLD_YELLOW
-    );
+    $help = $console->colorize('This is the help screen.', Console::BOLD_YELLOW);
     $console->write($help);
     $console->send();
 } else if ($console->request()->hasArgument('users')) {
@@ -59,9 +52,8 @@ Then, we run the following commands:
     
     ./pop help
     This is the help screen.
-    
 
-
-    
- 
-
+This is a pretty barebones example. Ideally, you could wire an application to
+use the console but setting routes, controllers and actions. Refer to the
+[Pop PHP Skeleton](https://github.com/popphp/popphp-skeleton) example application
+to see how to wire up a console-based application.
