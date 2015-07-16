@@ -2,6 +2,7 @@ pop-console
 ===========
 
 [![Build Status](https://travis-ci.org/popphp/pop-console.svg?branch=master)](https://travis-ci.org/popphp/pop-console)
+[![Coverage Status](http://www.popphp.org/cc/coverage.php?comp=pop-console)](http://www.popphp.org/cc/pop-console/)
 
 OVERVIEW
 --------
