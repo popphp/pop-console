@@ -24,37 +24,103 @@ Install `pop-console` using Composer.
 BASIC USAGE
 -----------
 
-In this simple example, we create a script called `pop` and set the following:
+In this simple example, we create a script called `pop` and wire it up. First,
+we'll create some commands and an option and add them to the console object:
 
 ```php
 use Pop\Console\Console;
 use Pop\Console\Input;
 
-$console = new Console();
-$console->addOption(new Input\Option('-l|--list'));
-$console->addCommand(new Input\Command('help'));
+$name = new Input\Option('-n|--name', Input\Option::VALUE_REQUIRED);
 
+$help = new Input\Command('help');
+$help->setHelp('This is the general help screen.');
+
+$edit = new Input\Command('edit', Input\Command::VALUE_REQUIRED);
+$edit->setHelp('This is the help screen for the edit command.');
+
+$console = new Console();
+$console->addOption($name);
+$console->addCommand($help);
+$console->addCommand($edit);
+```
+
+Once the commands and options are registered with the main `$console` object, we
+can parse the incoming CLI request, check if it's valid and correctly route it:
+
+```php
 $console->parseRequest();
 
-if ($console->request()->hasArgument('help')) {
-    $help = $console->colorize('This is the help screen.', Console::BOLD_YELLOW);
-    $console->write($help);
-    $console->send();
-} else if ($console->request()->hasArgument('users')) {
-    $console->write($console->colorize('You selected to list users.', Console::CYAN));
+if ($console->isRequestValid()) {
+    if ($console->request()->hasCommand('edit')) {
+        $value = $console->getCommand('edit')->getValue();
+        switch ($value) {
+            case 'help':
+                $help = $console->colorize(
+                    $console->getCommand('edit')->getHelp(), Console::BOLD_YELLOW
+                );
+                $console->write($help, '    ');
+                $console->send();
+                break;
+            default:
+                $console->write('You have selected to edit ' . $value, '    ');
+                if ($console->request()->hasOption('--name')) {
+                    $console->write(
+                        'You have added the name option of ' . $console->getOption('--name')->getValue(),
+                        '    '
+                    );
+                }
+                $console->send();
+        }
+    } else if ($console->request()->hasCommand('help')) {
+        $help = $console->colorize(
+            $console->getCommand('help')->getHelp(), Console::BOLD_YELLOW
+        );
+        $console->write($help, '    ');
+        $console->send();
+    } else {
+        $console->write(
+            $console->colorize('The command was not recognized.', Console::BOLD_RED),
+            '    '
+        );
+        $console->send();
+    }
+} else {
+    $console->write(
+        $console->colorize('The command was not valid.', Console::BOLD_RED),
+        '    '
+    );
     $console->send();
 }
 ```
 
-Then, we run the following commands:
+Then, we can run the following valid commands:
 
-    ./pop --list users
-    You selected to list users.
-    
     ./pop help
-    This is the help screen.
+    This is the general help screen.
+    
+    ./pop edit users
+    You have selected to edit users
+    
+    ./pop edit users --name=bob
+    You have selected to edit users
+    You have added the name option of bob
+    
+    ./pop edit help
+    This is the help screen for the edit command.
+
+And, any of these invalid commands will produce the error output:
+
+    ./pop badcommand
+    This is the help screen for the edit command.
+    
+    ./pop edit
+    This is the help screen for the edit command.
+
+The last example is not value because we made the argument value of
+the `edit` command required.
 
 This is a pretty barebones example. Ideally, you could wire an application to
 use the console but setting routes, controllers and actions. Refer to the
 [Pop PHP Skeleton](https://github.com/popphp/popphp-skeleton) example application
-to see how to wire up a console-based application using Pop PHP.
+to see how to wire up a CLI-based application using Pop PHP.
