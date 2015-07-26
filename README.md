@@ -66,7 +66,8 @@ if ($console->isRequestValid()) {
                 $console->write('You have selected to edit ' . $value, '    ');
                 if ($console->request()->hasOption('--name')) {
                     $console->write(
-                        'You have added the name option of ' . $console->getOption('--name')->getValue(),
+                        'You have added the name option of ' .
+                            $console->getOption('--name')->getValue(),
                         '    '
                     );
                 }
