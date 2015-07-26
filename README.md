@@ -113,10 +113,10 @@ Then, we can run the following valid commands:
 And, any of these invalid commands will produce the error output:
 
     ./pop badcommand
-    This is the help screen for the edit command.
+    The command was not recognized.
     
     ./pop edit
-    This is the help screen for the edit command.
+    The command was not valid.
 
 The last example is not value because we made the argument value of
 the `edit` command required.
