@@ -29,6 +29,18 @@ class RequestTest extends \PHPUnit_Framework_TestCase
         $this->assertGreaterThanOrEqual(1, count($request->getEnvs()));
     }
 
+
+    public function testGetOptionsAndCommands()
+    {
+        $request = new Request();
+        $this->assertFalse($request->hasOption('-l'));
+        $this->assertNull($request->getOption('-l'));
+        $this->assertFalse($request->hasCommand('help'));
+        $this->assertNull($request->getCommand('help'));
+        $this->assertEquals(0, count($request->getOptions()));
+        $this->assertEquals(0, count($request->getCommands()));
+    }
+
     public function testGetScriptName()
     {
         $request = new Request();

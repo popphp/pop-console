@@ -33,6 +33,18 @@ class Request
     protected $args = [];
 
     /**
+     * Options found
+     * @var array
+     */
+    protected $options = [];
+
+    /**
+     * Commands found
+     * @var array
+     */
+    protected $commands = [];
+
+    /**
      * Console environment variables
      * @var array
      */
@@ -111,6 +123,70 @@ class Request
     public function getEnvs()
     {
         return $this->env;
+    }
+
+    /**
+     * Get an option
+     *
+     * @param  string $key
+     * @return mixed
+     */
+    public function getOption($key)
+    {
+        return (isset($this->options[$key])) ? $this->options[$key] : null;
+    }
+
+    /**
+     * Check if the request has an option
+     *
+     * @param  string $key
+     * @return boolean
+     */
+    public function hasOption($key)
+    {
+        return isset($this->options[$key]);
+    }
+
+    /**
+     * Get the options found
+     *
+     * @return array
+     */
+    public function getOptions()
+    {
+        return $this->options;
+    }
+
+    /**
+     * Get a command
+     *
+     * @param  string $key
+     * @return mixed
+     */
+    public function getCommand($key)
+    {
+        return (isset($this->commands[$key])) ? $this->commands[$key] : null;
+    }
+
+    /**
+     * Check if the request has a command
+     *
+     * @param  string $key
+     * @return boolean
+     */
+    public function hasCommand($key)
+    {
+        return isset($this->commands[$key]);
+    }
+
+    /**
+     * Get the commands found
+     *
+     * @return array
+     */
+    public function getCommands()
+    {
+        return $this->commands;
     }
 
     /**
@@ -218,12 +294,17 @@ class Request
                                     }
                                     $option->setValue($optionValue);
                                     unset($this->args[$key]);
+
+                                    $this->options[$option->getShortName()] = $option;
+                                    if ($option->hasLongName()) {
+                                        $this->options[$option->getLongName()] = $option;
+                                    }
                                 }
                             }
                         }
                     }
 
-                    if (!($optionFound)) {
+                    if (!($optionFound) && ($required)) {
                         $reqOptName = null;
                         if (($option->hasShortName()) && ($option->hasLongName())) {
                             $reqOptName = $option->getShortName() . '|' . $option->getLongName();
@@ -283,6 +364,8 @@ class Request
                 } else {
                     $command->setValue(true);
                 }
+
+                $this->commands[$name] = $command;
             }
         }
 
