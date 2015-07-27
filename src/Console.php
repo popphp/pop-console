@@ -406,7 +406,7 @@ class Console implements \ArrayAccess
             $fgColor = $this->getColorCode($fg, 'foreground');
             $bgColor = $this->getColorCode($bg, 'background');
             return ($fgColor !== null ? "\x1b[" . $fgColor . 'm' : '') .
-            ($bgColor !== null ? "\x1b[" . $bgColor . 'm' : '') . $string . "\x1b[22;39m\x1b[0;49m";
+                ($bgColor !== null ? "\x1b[" . $bgColor . 'm' : '') . $string . "\x1b[0m";
         } else {
             return $string;
         }
