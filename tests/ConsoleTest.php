@@ -137,8 +137,7 @@ class ConsoleTest extends \PHPUnit_Framework_TestCase
         $string = $console->colorize('Hello World', Console::BOLD_BLUE, Console::RED);
         $this->assertContains('[1;34m', $string);
         $this->assertContains('[41m', $string);
-        $this->assertContains('[22;39m', $string);
-        $this->assertContains('[0;49m', $string);
+        $this->assertContains('[0m', $string);
     }
 
     public function testBadColor()
