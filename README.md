@@ -140,7 +140,7 @@ echo 'Your favorite letter is ' . $letter . '.';
     Which is your favorite letter: A, B, C, or D? B   // <- User types 'B' 
     Your favorite letter is B.
 
-These are pretty basic example. Ideally, you could wire an application to
+These are pretty basic examples. Ideally, you could wire an application to
 use the console but setting routes, controllers and actions. Refer to the
 [Pop PHP Skeleton](https://github.com/popphp/popphp-skeleton) example application
 to see how to wire up a CLI-based application using Pop PHP.
