@@ -121,7 +121,26 @@ And, any of these invalid commands will produce the error output:
 The last example is not value because we made the argument value of
 the `edit` command required.
 
-This is a pretty barebones example. Ideally, you could wire an application to
+### Using a prompt
+
+You can also trigger a prompt to get information from the user. You can enforce
+a certain set of options as well as whether or not they are case-sensitive:
+
+```php
+$console = new Pop\Console\Console();
+$letter  = $console->prompt(
+    'Which is your favorite letter: A, B, C, or D? ',
+    ['A', 'B', 'C', 'D'],
+    true
+);
+echo 'Your favorite letter is ' . $letter . '.';
+```
+
+    ./pop
+    Which is your favorite letter: A, B, C, or D? B   // <- User types 'B' 
+    Your favorite letter is B.
+
+These are pretty basic example. Ideally, you could wire an application to
 use the console but setting routes, controllers and actions. Refer to the
 [Pop PHP Skeleton](https://github.com/popphp/popphp-skeleton) example application
 to see how to wire up a CLI-based application using Pop PHP.
