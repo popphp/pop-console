@@ -478,7 +478,7 @@ class Console implements \ArrayAccess
      * @param  string $indent
      * @return Console
      */
-    public function write($text, $indent = null)
+    public function write($text = null, $indent = null)
     {
         if ($this->width != 0) {
             $lines = (strlen($text) > $this->width) ?
