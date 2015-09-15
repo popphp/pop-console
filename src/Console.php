@@ -66,6 +66,12 @@ class Console implements \ArrayAccess
     protected $width = 80;
 
     /**
+     * Console indentation
+     * @var string
+     */
+    protected $indent = null;
+
+    /**
      * Command objects
      * @var array
      */
@@ -118,25 +124,39 @@ class Console implements \ArrayAccess
     /**
      * Instantiate a new console object
      *
-     * @param  int $width
+     * @param  int    $width
+     * @param  string $indent
      * @return Console
      */
-    public function __construct($width = 80)
+    public function __construct($width = 80, $indent = null)
     {
         $this->request  = new Request();
         $this->response = new Response();
         $this->setWidth($width);
+        $this->setIndent($indent);
     }
 
     /**
      * Set the wrap width of the console object
      *
      * @param  int $width
-     * @return string
+     * @return Console
      */
     public function setWidth($width)
     {
         $this->width = (int)$width;
+        return $this;
+    }
+
+    /**
+     * Set the indentation of the console object
+     *
+     * @param  string $indent
+     * @return Console
+     */
+    public function setIndent($indent = null)
+    {
+        $this->indent = $indent;
         return $this;
     }
 
@@ -148,6 +168,16 @@ class Console implements \ArrayAccess
     public function getWidth()
     {
         return $this->width;
+    }
+
+    /**
+     * Get the indentation of the console object
+     *
+     * @return string
+     */
+    public function getIndent()
+    {
+        return $this->indent;
     }
 
     /**
@@ -472,13 +502,12 @@ class Console implements \ArrayAccess
     }
 
     /**
-     * Write a string of text to the response body
+     * Append a string of text to the response body
      *
      * @param  string $text
-     * @param  string $indent
      * @return Console
      */
-    public function write($text = null, $indent = null)
+    public function append($text = null)
     {
         if ($this->width != 0) {
             $lines = (strlen($text) > $this->width) ?
@@ -488,8 +517,21 @@ class Console implements \ArrayAccess
         }
 
         foreach ($lines as $line) {
-            $this->response->append($indent . $line . PHP_EOL);
+            $this->response->append($this->indent . $line . PHP_EOL);
         }
+        return $this;
+    }
+
+    /**
+     * Write a string of text to the response body and send the response
+     *
+     * @param  string $text
+     * @return Console
+     */
+    public function write($text = null)
+    {
+        $this->append($text);
+        $this->response->send();
         return $this;
     }
 

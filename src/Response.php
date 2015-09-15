@@ -91,7 +91,7 @@ class Response
     }
 
     /**
-     * Send the response
+     * Send the response and reset the body
      *
      * @return Response
      */

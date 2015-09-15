@@ -10,11 +10,13 @@ class ConsoleTest extends \PHPUnit_Framework_TestCase
 
     public function testConstructor()
     {
-        $console = new Console();
+        $console = new Console(100, '    ');
         $this->assertInstanceOf('Pop\Console\Console', $console);
         $this->assertInstanceOf('Pop\Console\Request', $console->request());
         $this->assertInstanceOf('Pop\Console\Response', $console->response());
-        $this->assertEquals(80, $console->getWidth());
+        $this->assertEquals(100, $console->getWidth());
+        $this->assertEquals('    ', $console->getIndent());
+
     }
 
     public function testAddAndGetCommand()
@@ -147,10 +149,10 @@ class ConsoleTest extends \PHPUnit_Framework_TestCase
         $this->assertContains('Hello World', $string);
     }
 
-    public function testWrite()
+    public function testAppend()
     {
         $console = new Console();
-        $console->write('Hello World');
+        $console->append('Hello World');
 
         ob_start();
         $console->send();
@@ -159,13 +161,23 @@ class ConsoleTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals('Hello World' . PHP_EOL, $result);
     }
 
+    public function testWrite()
+    {
+        $console = new Console();
+
+        ob_start();
+        $console->write('Hello World');
+        $result = ob_get_clean();
+
+        $this->assertEquals('Hello World' . PHP_EOL, $result);
+    }
+
     public function testWriteZero()
     {
         $console = new Console(0);
-        $console->write('Hello World');
 
         ob_start();
-        $console->send();
+        $console->write('Hello World');
         $result = ob_get_clean();
 
         $this->assertEquals('Hello World' . PHP_EOL, $result);
