@@ -504,10 +504,11 @@ class Console implements \ArrayAccess
     /**
      * Append a string of text to the response body
      *
-     * @param  string $text
+     * @param  string  $text
+     * @param  boolean $newline
      * @return Console
      */
-    public function append($text = null)
+    public function append($text = null, $newline = true)
     {
         if ($this->width != 0) {
             $lines = (strlen($text) > $this->width) ?
@@ -517,7 +518,7 @@ class Console implements \ArrayAccess
         }
 
         foreach ($lines as $line) {
-            $this->response->append($this->indent . $line . PHP_EOL);
+            $this->response->append($this->indent . $line . (($newline) ? PHP_EOL : null));
         }
         return $this;
     }
@@ -526,11 +527,12 @@ class Console implements \ArrayAccess
      * Write a string of text to the response body and send the response
      *
      * @param  string $text
+     * @param  boolean $newline
      * @return Console
      */
-    public function write($text = null)
+    public function write($text = null, $newline = true)
     {
-        $this->append($text);
+        $this->append($text, $newline);
         $this->response->send();
         return $this;
     }
