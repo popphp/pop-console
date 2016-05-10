@@ -2,7 +2,7 @@ pop-console
 ===========
 
 [![Build Status](https://travis-ci.org/popphp/pop-console.svg?branch=master)](https://travis-ci.org/popphp/pop-console)
-[![Coverage Status](http://www.popphp.org/cc/coverage.php?comp=pop-console)](http://www.popphp.org/cc/pop-console/)
+[![Coverage Status](http://cc.popphp.org/coverage.php?comp=pop-console)](http://cc.popphp.org/pop-console/)
 
 OVERVIEW
 --------
@@ -99,14 +99,14 @@ Then, we can run the following valid commands:
 
     ./pop help
     This is the general help screen.
-    
+
     ./pop edit users
     You have selected to edit users
-    
+
     ./pop edit users --name=bob
     You have selected to edit users
     You have added the name option of bob
-    
+
     ./pop edit help
     This is the help screen for the edit command.
 
@@ -114,7 +114,7 @@ And, any of these invalid commands will produce the error output:
 
     ./pop badcommand
     The command was not recognized.
-    
+
     ./pop edit
     The command was not valid.
 
@@ -137,7 +137,7 @@ echo 'Your favorite letter is ' . $letter . '.';
 ```
 
     ./pop
-    Which is your favorite letter: A, B, C, or D? B   // <- User types 'B' 
+    Which is your favorite letter: A, B, C, or D? B   // <- User types 'B'
     Your favorite letter is B.
 
 These are pretty basic examples. Ideally, you could wire an application to
