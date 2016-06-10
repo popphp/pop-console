@@ -468,7 +468,7 @@ class Console implements \ArrayAccess
      */
     public function prompt($prompt, array $options = null, $caseSensitive = false, $length = 500)
     {
-        echo $prompt;
+        echo $this->indent . $prompt;
         $input = null;
 
         if (null !== $options) {
