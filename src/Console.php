@@ -482,7 +482,7 @@ class Console implements \ArrayAccess
 
             while (!in_array($input, $options)) {
                 if (null !== $input) {
-                    echo $prompt;
+                    echo $this->indent . $prompt;
                 }
                 $promptInput = fopen('php://stdin', 'r');
                 $input       = fgets($promptInput, strlen($prompt) . $length);
