@@ -192,6 +192,49 @@ class Console
     }
 
     /**
+     * Get commands
+     *
+     * @return array
+     */
+    public function getCommands()
+    {
+        return $this->commands;
+    }
+
+    /**
+     * Get a command
+     *
+     * @param  string $command
+     * @return Command
+     */
+    public function getCommand($command)
+    {
+        return (isset($this->commands[$command])) ? $this->commands[$command] : null;
+    }
+
+    /**
+     * Check if the console object has a command
+     *
+     * @param  string $command
+     * @return boolean
+     */
+    public function hasCommand($command)
+    {
+        return isset($this->commands[$command]);
+    }
+
+    /**
+     * Get a command help
+     *
+     * @param  string $command
+     * @return string
+     */
+    public function help($command)
+    {
+        return (isset($this->commands[$command])) ? $this->commands[$command]->getHelp() : null;
+    }
+
+    /**
      * Colorize a string for output
      *
      * @param  string $string
