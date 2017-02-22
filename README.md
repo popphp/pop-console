@@ -1,6 +1,9 @@
 pop-console
 ===========
 
+[![Build Status](https://travis-ci.org/popphp/pop-console.svg?branch=master)](https://travis-ci.org/popphp/pop-console)
+[![Coverage Status](http://cc.popphp.org/coverage.php?comp=pop-console)](http://cc.popphp.org/pop-console/)
+
 OVERVIEW
 --------
 `pop-console` provides a layer to run an application from the console window.
