@@ -4,8 +4,9 @@ namespace Pop\Console\Test;
 
 use Pop\Console\Console;
 use Pop\Console\Command;
+use PHPUnit\Framework\TestCase;
 
-class ConsoleTest extends \PHPUnit_Framework_TestCase
+class ConsoleTest extends TestCase
 {
 
     public function testConstructor()
@@ -14,7 +15,27 @@ class ConsoleTest extends \PHPUnit_Framework_TestCase
         $this->assertInstanceOf('Pop\Console\Console', $console);
         $this->assertEquals(100, $console->getWidth());
         $this->assertEquals('    ', $console->getIndent());
+    }
 
+    public function testSetAndGetHeader()
+    {
+        $console = new Console();
+        $console->setHeader('header');
+        $this->assertEquals('header', $console->getHeader());
+    }
+
+    public function testSetAndGetFooter()
+    {
+        $console = new Console();
+        $console->setFooter('footer');
+        $this->assertEquals('footer', $console->getFooter());
+    }
+
+    public function testSetAndGetHelpColors()
+    {
+        $console = new Console();
+        $console->setHelpColors(Console::RED, Console::WHITE, Console::BLUE);
+        $this->assertEquals(3, count($console->getHelpColors()));
     }
 
     public function testAddAndGetCommand()
@@ -59,6 +80,57 @@ class ConsoleTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals('Hello World', $console->help('hello'));
     }
 
+    public function testDisplayHelp()
+    {
+        $command = new Command('hello', '-v', 'This is the help');
+        $console = new Console();
+        $console->addCommand($command);
+
+        ob_start();
+        $console->help();
+        $result = ob_get_clean();
+
+        $this->assertEquals('    hello -v    This is the help' . PHP_EOL, $result);
+    }
+
+    public function testDisplayHelpColors()
+    {
+        $userList   = new Command('user list', '-v --option=123 [<id>]', 'This is the users list command.');
+        $userAdd    = new Command('user', '--name=');
+        $userEdit   = new Command('user edit', '<id>', 'This is the users edit command.');
+        $userDelete = new Command('user delete', '<id>', 'This is the users delete command. This is the users delete command. This is the users delete command. This is the users delete command. This is the users delete command.');
+        $userShow   = new Command('user show', '-v --option=123 [<id>]', 'This is the users list command.');
+
+        $console = new Console(80, '    ');
+        $console->setHelpColors(Console::BOLD_BLUE, Console::YELLOW, Console::BOLD_MAGENTA);
+
+        $console->setHeader(
+            <<<HEADER
+
+Pop Console Example App
+=======================
+
+HEADER
+        );
+
+
+        $console->setFooter('-----------------');
+
+        $console->addCommands([
+            $userList,
+            $userAdd,
+            $userEdit,
+            $userDelete,
+            $userShow
+        ]);
+
+        ob_start();
+        $console->help();
+        $result = ob_get_clean();
+
+        $this->assertContains('user', $result);
+    }
+
     public function testColor()
     {
         $console = new Console();
@@ -84,7 +156,7 @@ class ConsoleTest extends \PHPUnit_Framework_TestCase
         $console->send();
         $result = ob_get_clean();
 
-        $this->assertEquals('Hello World' . PHP_EOL, $result);
+        $this->assertEquals('    Hello World' . PHP_EOL, $result);
     }
 
     public function testWrite()
@@ -95,7 +167,7 @@ class ConsoleTest extends \PHPUnit_Framework_TestCase
         $console->write('Hello World');
         $result = ob_get_clean();
 
-        $this->assertEquals('Hello World' . PHP_EOL, $result);
+        $this->assertEquals('    Hello World' . PHP_EOL, $result);
     }
 
     public function testWriteZero()
@@ -106,7 +178,7 @@ class ConsoleTest extends \PHPUnit_Framework_TestCase
         $console->write('Hello World');
         $result = ob_get_clean();
 
-        $this->assertEquals('Hello World' . PHP_EOL, $result);
+        $this->assertEquals('    Hello World' . PHP_EOL, $result);
     }
 
     public function testClear()

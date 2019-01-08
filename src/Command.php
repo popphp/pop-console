@@ -4,7 +4,7 @@
  *
  * @link       https://github.com/popphp/popphp-framework
  * @author     Nick Sagona, III <dev@nolainteractive.com>
- * @copyright  Copyright (c) 2009-2018 NOLA Interactive, LLC. (http://www.nolainteractive.com)
+ * @copyright  Copyright (c) 2009-2019 NOLA Interactive, LLC. (http://www.nolainteractive.com)
  * @license    http://www.popphp.org/license     New BSD License
  */
 
@@ -19,9 +19,9 @@ namespace Pop\Console;
  * @category   Pop
  * @package    Pop\Console
  * @author     Nick Sagona, III <dev@nolainteractive.com>
- * @copyright  Copyright (c) 2009-2018 NOLA Interactive, LLC. (http://www.nolainteractive.com)
+ * @copyright  Copyright (c) 2009-2019 NOLA Interactive, LLC. (http://www.nolainteractive.com)
  * @license    http://www.popphp.org/license     New BSD License
- * @version    3.0.1
+ * @version    3.1.0
  */
 class Command
 {
@@ -33,6 +33,12 @@ class Command
     protected $name = null;
 
     /**
+     * Command params
+     * @var string
+     */
+    protected $params = null;
+
+    /**
      * Command help
      * @var string
      */
@@ -42,13 +48,15 @@ class Command
      * Instantiate the command object
      *
      * @param  string $name
+     * @param  string $params
      * @param  string $help
      * @return Command
      */
-    public function __construct($name, $help = null)
+    public function __construct($name, $params = null, $help = null)
     {
-        $this->name = $name;
-        $this->help = $help;
+        $this->name   = $name;
+        $this->params = $params;
+        $this->help   = $help;
         return $this;
     }
 
@@ -61,6 +69,18 @@ class Command
     public function setName($name)
     {
         $this->name = $name;
+        return $this;
+    }
+
+    /**
+     * Set the command params
+     *
+     * @param  string $params
+     * @return Command
+     */
+    public function setParams($params)
+    {
+        $this->params = $params;
         return $this;
     }
 
@@ -87,6 +107,26 @@ class Command
     }
 
     /**
+     * Get the command params
+     *
+     * @return string
+     */
+    public function getParams()
+    {
+        return $this->params;
+    }
+
+    /**
+     * Determine if the command has params
+     *
+     * @return boolean
+     */
+    public function hasParams()
+    {
+        return (null !== $this->params);
+    }
+
+    /**
      * Get the command help
      *
      * @return string
@@ -97,13 +137,23 @@ class Command
     }
 
     /**
+     * Determine if the command has help
+     *
+     * @return boolean
+     */
+    public function hasHelp()
+    {
+        return (null !== $this->help);
+    }
+
+    /**
      * Return the command name as string
      *
      * @return string
      */
     public function __toString()
     {
-        return $this->name;
+        return $this->name . ((null !== $this->params) ? ' ' . $this->params : null);
     }
 
 }

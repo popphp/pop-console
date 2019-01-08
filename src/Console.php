@@ -4,7 +4,7 @@
  *
  * @link       https://github.com/popphp/popphp-framework
  * @author     Nick Sagona, III <dev@nolainteractive.com>
- * @copyright  Copyright (c) 2009-2018 NOLA Interactive, LLC. (http://www.nolainteractive.com)
+ * @copyright  Copyright (c) 2009-2019 NOLA Interactive, LLC. (http://www.nolainteractive.com)
  * @license    http://www.popphp.org/license     New BSD License
  */
 
@@ -19,9 +19,9 @@ namespace Pop\Console;
  * @category   Pop
  * @package    Pop\Console
  * @author     Nick Sagona, III <dev@nolainteractive.com>
- * @copyright  Copyright (c) 2009-2018 NOLA Interactive, LLC. (http://www.nolainteractive.com)
+ * @copyright  Copyright (c) 2009-2019 NOLA Interactive, LLC. (http://www.nolainteractive.com)
  * @license    http://www.popphp.org/license     New BSD License
- * @version    3.0.1
+ * @version    3.1.0
  */
 class Console
 {
@@ -72,6 +72,24 @@ class Console
     protected $commands = [];
 
     /**
+     * Console header
+     * @var string
+     */
+    protected $header = null;
+
+    /**
+     * Console footer
+     * @var string
+     */
+    protected $footer = null;
+
+    /**
+     * Help colors
+     * @var array
+     */
+    protected $helpColors = [];
+
+    /**
      * Color map of ansi values
      *
      * @var array
@@ -115,7 +133,7 @@ class Console
      * @param  int    $width
      * @param  string $indent
      */
-    public function __construct($width = 80, $indent = null)
+    public function __construct($width = 80, $indent = '    ')
     {
         $this->setWidth($width);
         $this->setIndent($indent);
@@ -146,6 +164,53 @@ class Console
     }
 
     /**
+     * Set the console header
+     *
+     * @param  string $header
+     * @return Console
+     */
+    public function setHeader($header)
+    {
+        $this->header = $header;
+        return $this;
+    }
+
+    /**
+     * Set the console footer
+     *
+     * @param  string $footer
+     * @return Console
+     */
+    public function setFooter($footer)
+    {
+        $this->footer = $footer;
+        return $this;
+    }
+
+    /**
+     * Set the console help colors
+     *
+     * @param  int $color1
+     * @param  int $color2
+     * @param  int $color3
+     * @return Console
+     */
+    public function setHelpColors($color1, $color2 = null, $color3 = null)
+    {
+        $this->helpColors = [
+            $color1
+        ];
+        if (null !== $color2) {
+            $this->helpColors[] = $color2;
+        }
+        if (null !== $color3) {
+            $this->helpColors[] = $color3;
+        }
+
+        return $this;
+    }
+
+    /**
      * Get the wrap width of the console object
      *
      * @return int
@@ -166,6 +231,36 @@ class Console
     }
 
     /**
+     * Get the console header
+     *
+     * @return string
+     */
+    public function getHeader()
+    {
+        return $this->header;
+    }
+
+    /**
+     * Get the console footer
+     *
+     * @return string
+     */
+    public function getFooter()
+    {
+        return $this->footer;
+    }
+
+    /**
+     * Get the console help colors
+     *
+     * @return array
+     */
+    public function getHelpColors()
+    {
+        return $this->helpColors;
+    }
+
+    /**
      * Add a command
      *
      * @param  Command $command
@@ -173,7 +268,7 @@ class Console
      */
     public function addCommand(Command $command)
     {
-        $this->commands[(string)$command] = $command;
+        $this->commands[$command->getName()] = $command;
         return $this;
     }
 
@@ -224,14 +319,18 @@ class Console
     }
 
     /**
-     * Get a command help
+     * Get a help
      *
      * @param  string $command
      * @return string
      */
-    public function help($command)
+    public function help($command = null)
     {
-        return (isset($this->commands[$command])) ? $this->commands[$command]->getHelp() : null;
+        if (null !== $command) {
+            return (isset($this->commands[$command])) ? $this->commands[$command]->getHelp() : null;
+        } else {
+            $this->displayHelp();
+        }
     }
 
     /**
@@ -347,6 +446,95 @@ class Console
     }
 
     /**
+     * Display console help
+     *
+     * @return void
+     */
+    public function displayHelp()
+    {
+        $this->response = null;
+        $commands       = [];
+        $commandLengths = [];
+
+        if (null !== $this->header) {
+            $this->response .= $this->formatTemplate($this->header);
+        }
+
+        foreach ($this->commands as $key => $command) {
+            $name   = $command->getName();
+            $params = $command->getParams();
+            $length = strlen($name);
+
+            if (count($this->helpColors) > 0) {
+                if (strpos($name, ' ') !== false) {
+                    $name1 = substr($name, 0, strpos($name, ' '));
+                    $name2 = substr($name, strpos($name, ' ') + 1);
+                    if (isset($this->helpColors[0])) {
+                        $name1 = $this->colorize($name1, $this->helpColors[0]);
+                    }
+                    if (isset($this->helpColors[1])) {
+                        $name2 = $this->colorize($name2, $this->helpColors[1]);
+                    }
+                    $name = $name1 . ' ' . $name2;
+                } else if (isset($this->helpColors[0])){
+                    $name = $this->colorize($name, $this->helpColors[0]);
+                }
+            }
+
+            if (null !== $params) {
+                $length += (strlen($params) + 1);
+                $name   .= ' ' . ((isset($this->helpColors[2])) ? $this->colorize($params, $this->helpColors[2]) : $params);
+            }
+
+            $commands[$key]       = $this->indent . $name;
+            $commandLengths[$key] = $length;
+        }
+
+        $maxLength = max($commandLengths);
+        $wrapped   = false;
+        $i         = 0;
+
+        foreach ($commands as $key => $command) {
+            if ($this->commands[$key]->hasHelp()) {
+                $help = $this->commands[$key]->getHelp();
+                $pad  = ($commandLengths[$key] < $maxLength) ?
+                    str_repeat(' ', $maxLength - $commandLengths[$key]) . '    ' : '    ';
+
+                if (strlen((string)$this->commands[$key] . $pad . $help) > $this->width) {
+                    if (!$wrapped) {
+                        $this->response .= PHP_EOL;
+                    }
+
+                    $offset = $this->width - strlen((string)$this->commands[$key] . $pad);
+                    $lines  = explode(PHP_EOL, wordwrap($help, $offset, PHP_EOL));
+                    foreach ($lines as $i => $line) {
+                        $this->response .= ($i == 0) ?
+                            $command . $pad . $line . PHP_EOL :
+                            $this->indent . str_repeat(' ', strlen((string)$this->commands[$key])) . $pad . $line . PHP_EOL;
+                    }
+
+                    if ($i < count($commands) - 1) {
+                        $this->response .= PHP_EOL;
+                    }
+                    $wrapped = true;
+                } else {
+                    $this->response .= $command . $pad . $help . PHP_EOL;
+                    $wrapped = false;
+                }
+            } else {
+                $this->response .= $command . $this->commands[$key]->getHelp() . PHP_EOL;
+            }
+            $i++;
+        }
+
+        if (null !== $this->footer) {
+            $this->response .= $this->formatTemplate($this->footer);
+        }
+
+        $this->send();
+    }
+
+    /**
      * Clear the console
      *
      * @return void
@@ -369,6 +557,29 @@ class Console
             return static::$colorMap[$type][$color];
         }
         return null;
+    }
+
+    /**
+     * Format header or footer template
+     *
+     * @param  string $template
+     * @return string
+     */
+    protected function formatTemplate($template)
+    {
+        $format = null;
+
+        if (strpos($template, "\n") !== false) {
+            $templateLines = explode("\n", $template);
+            foreach ($templateLines as $line) {
+                $line = trim($line);
+                $format .= $this->indent . $line . PHP_EOL;
+            }
+        } else {
+            $format = $this->indent . $template . PHP_EOL;
+        }
+
+        return $format;
     }
 
 }
