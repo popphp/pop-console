@@ -31,6 +31,13 @@ class ConsoleTest extends TestCase
         $this->assertEquals('footer', $console->getFooter());
     }
 
+    public function testSetAndGetHeaderSent()
+    {
+        $console = new Console();
+        $console->setHeaderSent(true);
+        $this->assertTrue($console->getHeaderSent());
+    }
+
     public function testSetAndGetHelpColors()
     {
         $console = new Console();
