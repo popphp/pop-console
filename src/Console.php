@@ -251,21 +251,23 @@ class Console
     /**
      * Get the console header
      *
+     * @param  boolean $formatted
      * @return string
      */
-    public function getHeader()
+    public function getHeader($formatted = false)
     {
-        return $this->header;
+        return ($formatted) ? $this->formatTemplate($this->header) : $this->header;
     }
 
     /**
      * Get the console footer
      *
+     * @param  boolean $formatted
      * @return string
      */
-    public function getFooter()
+    public function getFooter($formatted = false)
     {
-        return $this->footer;
+        return ($formatted) ? $this->formatTemplate($this->footer) : $this->footer;
     }
 
     /**
