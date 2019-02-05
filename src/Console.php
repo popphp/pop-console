@@ -78,6 +78,12 @@ class Console
     protected $header = null;
 
     /**
+     * Flag for if console header has been sent
+     * @var boolean
+     */
+    protected $headerSent = false;
+
+    /**
      * Console footer
      * @var string
      */
@@ -188,6 +194,18 @@ class Console
     }
 
     /**
+     * Set the console header sent flag
+     *
+     * @param  boolean $headerSent
+     * @return Console
+     */
+    public function setHeaderSent($headerSent = true)
+    {
+        $this->headerSent = (bool)$headerSent;
+        return $this;
+    }
+
+    /**
      * Set the console help colors
      *
      * @param  int $color1
@@ -248,6 +266,16 @@ class Console
     public function getFooter()
     {
         return $this->footer;
+    }
+
+    /**
+     * Get the console header sent flag
+     *
+     * @return boolean
+     */
+    public function getHeaderSent()
+    {
+        return $this->headerSent;
     }
 
     /**
@@ -360,11 +388,18 @@ class Console
      * @param  array   $options
      * @param  boolean $caseSensitive
      * @param  int     $length
+     * @param  boolean $withHeaders
      * @return string
      */
-    public function prompt($prompt, array $options = null, $caseSensitive = false, $length = 500)
+    public function prompt($prompt, array $options = null, $caseSensitive = false, $length = 500, $withHeaders = true)
     {
-        echo $this->indent . $prompt;
+        if (($withHeaders) && (null !== $this->header)) {
+            $this->headerSent = true;
+            echo $this->formatTemplate($this->header) . $this->indent . $prompt;
+        } else {
+            echo $this->indent . $prompt;
+        }
+
         $input = null;
 
         if (null !== $options) {
@@ -424,22 +459,33 @@ class Console
      *
      * @param  string $text
      * @param  boolean $newline
+     * @param  boolean $withHeaders
      * @return Console
      */
-    public function write($text = null, $newline = true)
+    public function write($text = null, $newline = true, $withHeaders = true)
     {
         $this->append($text, $newline);
-        $this->send();
+        $this->send($withHeaders);
         return $this;
     }
 
     /**
      * Send the response
      *
+     * @param  boolean $withHeaders
      * @return Console
      */
-    public function send()
+    public function send($withHeaders = true)
     {
+        if ($withHeaders) {
+            if ((null !== $this->header) && !($this->headerSent)) {
+                $this->response = $this->formatTemplate($this->header) . $this->response;
+            }
+            if (null !== $this->footer) {
+                $this->response .= $this->formatTemplate($this->footer);
+            }
+        }
+
         echo $this->response;
         $this->response = null;
         return $this;
@@ -531,7 +577,7 @@ class Console
             $this->response .= $this->formatTemplate($this->footer);
         }
 
-        $this->send();
+        $this->send(false);
     }
 
     /**
