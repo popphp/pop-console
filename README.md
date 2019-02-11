@@ -127,5 +127,5 @@ that are registered with the console object.
 
 These are basic examples. Ideally, you could wire an application to use the console
 but not for setting routes, controllers and actions. Refer to the
-[Pop PHP Skeleton](https://github.com/popphp/popphp-skeleton) example application
+[Pop PHP Tutorial](https://github.com/popphp/popphp-tutorial) example application
 to see how to wire up a CLI-based application using Pop PHP.
