@@ -24,27 +24,47 @@ Install `pop-console` using Composer.
 BASIC USAGE
 -----------
 
-In this simple example, we create a script called `pop` and wire it up. First,
-we'll create some commands and an option and add them to the console object:
+### Outputting to the console
+
+You can use a console object to manage and deploy output to the console, including
+a prepended header and appended footer.
 
 ```php
-use Pop\Console\Console;
-use Pop\Console\Command;
+$console = new Pop\Console\Console();
+$console->setHeader('My Application');
+$console->setFooter('The End');
 
-$edit = new Command('edit', Input\Command::VALUE_REQUIRED);
-$edit->setHelp('This is the help screen for the edit command.');
+$console->append('Here is some console information.');
+$console->append('Hope you enjoyed it!');
 
-$console = new Console();
-$console->addCommand($help);
-$console->addCommand($edit);
+$console->send();
 ```
 
-Once the commands are registered with the main `$console` object, we access
-them like so:
+The above will output:
+
+```text
+
+    My Application
+    
+    Here is some console information.
+    Hope you enjoyed it!
+
+    The End
+
+```
+
+### Console colors
+
+On consoles that support it, you can colorize text outputted to the console with the
+``colorize()`` method:
+
 
 ```php
-$console->write($console->help('edit'), '    ');
-$console->send();
+$console->append(
+    'Here is some ' . 
+    $console->colorize('IMPORTANT', Console::BOLD_RED) .
+    ' console information.'
+);
 ```
 
 ### Using a prompt
@@ -65,6 +85,45 @@ echo 'Your favorite letter is ' . $letter . '.';
     ./pop
     Which is your favorite letter: A, B, C, or D? B   // <- User types 'B'
     Your favorite letter is B.
+
+### Help screen
+
+You can register commands with the console object to assist in auto-generating
+a well-formatted, colorized help screen.
+
+```php
+use Pop\Console\Console;
+use Pop\Console\Command;
+
+$edit = new Command(
+    'user edit', '<id>', 'This is the help for the user edit command'
+);
+
+$remove = new Command(
+    'user remove', '<id>', 'This is the help for the user remove command'
+);
+
+$console = new Console();
+$console->addCommand($edit);
+$console->addCommand($remove);
+$console->setHelpColors(
+    Console::BOLD_CYAN,
+    Console::BOLD_GREEN,
+    Console::BOLD_YELLOW
+);
+```
+
+Once the commands are registered with the main `$console` object, we can generate
+the help screen like this: 
+
+```php
+$console->help();
+```
+
+The above command will output an auto-generated, colorized help screen with the commands
+that are registered with the console object.
+
+#### Note
 
 These are basic examples. Ideally, you could wire an application to use the console
 but not for setting routes, controllers and actions. Refer to the
