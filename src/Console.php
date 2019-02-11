@@ -13,6 +13,8 @@
  */
 namespace Pop\Console;
 
+use Pop\Router\Match;
+
 /**
  * Console class
  *
@@ -346,6 +348,37 @@ class Console
     public function hasCommand($command)
     {
         return isset($this->commands[$command]);
+    }
+
+    /**
+     * Add commands from routes
+     *
+     * @param  Match\Cli $routeMatch
+     * @param  string    $scriptName
+     * @return Console
+     */
+    public function addCommandsFromRoutes(Match\Cli $routeMatch, $scriptName = null)
+    {
+        $routeMatch->match();
+
+        $commandRoutes = $routeMatch->getRoutes();
+        $commands      = $routeMatch->getCommands();
+
+        foreach ($commands as $name => $command) {
+            $commandName = implode(' ', $command);
+            $params      = trim(substr($name, strlen($commandName)));
+            $params      = (!empty($params)) ? $params : null;
+            $help        = (isset($commandRoutes[$name]) && isset($commandRoutes[$name]['help'])) ?
+                $commandRoutes[$name]['help'] : null;
+
+            if (null !== $scriptName) {
+                $commandName = $scriptName . ' ' . $commandName;
+            }
+
+            $this->addCommand(new Command($commandName, $params, $help));
+        }
+
+        return $this;
     }
 
     /**

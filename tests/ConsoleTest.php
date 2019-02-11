@@ -2,6 +2,7 @@
 
 namespace Pop\Console\Test;
 
+use Pop\Application;
 use Pop\Console\Console;
 use Pop\Console\Command;
 use PHPUnit\Framework\TestCase;
@@ -50,6 +51,27 @@ class ConsoleTest extends TestCase
         $console = new Console();
         $console->addCommand(new Command('help'));
         $this->assertEquals('help', $console->getCommand('help')->getName());
+    }
+
+    public function testAddCommandsFromRoutes()
+    {
+        $app     = new Application(['routes' => [
+            'app:init [--web] [--api] [--cli] <namespace>' => [
+                'controller' => 'MyAppController',
+                'action'     => 'init',
+                'help'       => 'Init application' . PHP_EOL
+            ],
+            'db:config' => [
+                'controller' => 'MyAppController',
+                'action'     => 'config',
+                'help'       => 'Config DB'
+            ]
+        ]]);
+
+        $console = new Console();
+        $console->addCommandsFromRoutes($app->router()->getRouteMatch(), './app');
+        $this->assertEquals('./app app:init', $console->getCommand('./app app:init')->getName());
+        $this->assertEquals('./app db:config', $console->getCommand('./app db:config')->getName());
     }
 
     public function testAddAndGetCommands()
