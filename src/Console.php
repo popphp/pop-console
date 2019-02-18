@@ -396,18 +396,19 @@ class Console
     }
 
     /**
-     * Add commands from routes
+     * Get commands from routes
      *
      * @param  Match\Cli $routeMatch
      * @param  string    $scriptName
-     * @return Console
+     * @return array
      */
-    public function addCommandsFromRoutes(Match\Cli $routeMatch, $scriptName = null)
+    public function getCommandsFromRoutes(Match\Cli $routeMatch, $scriptName = null)
     {
         $routeMatch->match();
 
         $commandRoutes = $routeMatch->getRoutes();
         $commands      = $routeMatch->getCommands();
+        $commandsToAdd = [];
 
         foreach ($commands as $name => $command) {
             $commandName = implode(' ', $command);
@@ -420,7 +421,25 @@ class Console
                 $commandName = $scriptName . ' ' . $commandName;
             }
 
-            $this->addCommand(new Command($commandName, $params, $help));
+            $commandsToAdd[] = new Command($commandName, $params, $help);
+        }
+
+        return $commandsToAdd;
+    }
+
+    /**
+     * Add commands from routes
+     *
+     * @param  Match\Cli $routeMatch
+     * @param  string    $scriptName
+     * @return Console
+     */
+    public function addCommandsFromRoutes(Match\Cli $routeMatch, $scriptName = null)
+    {
+        $commands = $this->getCommandsFromRoutes($routeMatch, $scriptName);
+
+        if (!empty($commands)) {
+            $this->addCommands($commands);
         }
 
         return $this;
