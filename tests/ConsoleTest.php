@@ -46,6 +46,20 @@ class ConsoleTest extends TestCase
         $this->assertEquals(3, count($console->getHelpColors()));
     }
 
+    public function testGetServer()
+    {
+        $console = new Console();
+        $this->assertTrue(is_array($console->getServer()));
+        $this->assertNull($console->getServer('foo'));
+    }
+
+    public function testGetEnv()
+    {
+        $console = new Console();
+        $this->assertTrue(is_array($console->getEnv()));
+        $this->assertNull($console->getEnv('foo'));
+    }
+
     public function testAddAndGetCommand()
     {
         $console = new Console();

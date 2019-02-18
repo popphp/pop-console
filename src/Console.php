@@ -98,6 +98,16 @@ class Console
     protected $helpColors = [];
 
     /**
+     * SERVER array
+     */
+    protected $server = [];
+
+    /**
+     * ENV array
+     */
+    protected $env    = [];
+
+    /**
      * Color map of ansi values
      *
      * @var array
@@ -145,6 +155,9 @@ class Console
     {
         $this->setWidth($width);
         $this->setIndent($indent);
+
+        $this->server = (isset($_SERVER)) ? $_SERVER : [];
+        $this->env    = (isset($_ENV))    ? $_ENV    : [];
     }
 
     /**
@@ -290,6 +303,36 @@ class Console
     public function getHelpColors()
     {
         return $this->helpColors;
+    }
+
+    /**
+     * Get a value from $_SERVER, or the whole array
+     *
+     * @param  string $key
+     * @return string|array
+     */
+    public function getServer($key = null)
+    {
+        if (null === $key) {
+            return $this->server;
+        } else {
+            return (isset($this->server[$key])) ? $this->server[$key] : null;
+        }
+    }
+
+    /**
+     * Get a value from $_ENV, or the whole array
+     *
+     * @param  string $key
+     * @return string|array
+     */
+    public function getEnv($key = null)
+    {
+        if (null === $key) {
+            return $this->env;
+        } else {
+            return (isset($this->env[$key])) ? $this->env[$key] : null;
+        }
     }
 
     /**
