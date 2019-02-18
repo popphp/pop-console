@@ -99,11 +99,13 @@ class Console
 
     /**
      * SERVER array
+     * @var array
      */
     protected $server = [];
 
     /**
      * ENV array
+     * @var array
      */
     protected $env    = [];
 
