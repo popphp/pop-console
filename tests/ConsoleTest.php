@@ -171,23 +171,23 @@ HEADER
         $console->help();
         $result = ob_get_clean();
 
-        $this->assertContains('user', $result);
+        $this->assertStringContainsString('user', $result);
     }
 
     public function testColor()
     {
         $console = new Console();
         $string = $console->colorize('Hello World', Console::BOLD_BLUE, Console::RED);
-        $this->assertContains('[1;34m', $string);
-        $this->assertContains('[41m', $string);
-        $this->assertContains('[0m', $string);
+        $this->assertStringContainsString('[1;34m', $string);
+        $this->assertStringContainsString('[41m', $string);
+        $this->assertStringContainsString('[0m', $string);
     }
 
     public function testBadColor()
     {
         $console = new Console();
         $string = $console->colorize('Hello World', 'BAD_FG', 'BAD_BG');
-        $this->assertContains('Hello World', $string);
+        $this->assertStringContainsString('Hello World', $string);
     }
 
     public function testAppend()
