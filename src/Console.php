@@ -412,7 +412,7 @@ class Console
 
         foreach ($commands as $name => $command) {
             $commandName = implode(' ', $command);
-            $params      = trim(substr($name, strlen($commandName)));
+            $params      = trim(substr((string)$name, strlen((string)$commandName)));
             $params      = (!empty($params)) ? $params : null;
             $help        = (isset($commandRoutes[$name]) && isset($commandRoutes[$name]['help'])) ?
                 $commandRoutes[$name]['help'] : null;
@@ -504,9 +504,9 @@ class Console
         if (null !== $options) {
             $length = 0;
             foreach ($options as $key => $value) {
-                $options[$key] = ($caseSensitive) ? $value : strtolower($value);
-                if (strlen($value) > $length) {
-                    $length = strlen($value);
+                $options[$key] = ($caseSensitive) ? $value : strtolower((string)$value);
+                if (strlen((string)$value) > $length) {
+                    $length = strlen((string)$value);
                 }
             }
 
@@ -515,14 +515,14 @@ class Console
                     echo $this->indent . $prompt;
                 }
                 $promptInput = fopen('php://stdin', 'r');
-                $input       = fgets($promptInput, strlen($prompt) . $length);
+                $input       = fgets($promptInput, strlen((string)$prompt) . $length);
                 $input       = ($caseSensitive) ? rtrim($input) : strtolower(rtrim($input));
                 fclose($promptInput);
             }
         } else {
             while (null === $input) {
                 $promptInput = fopen('php://stdin', 'r');
-                $input       = fgets($promptInput, strlen($prompt) + $length);
+                $input       = fgets($promptInput, strlen((string)$prompt) + $length);
                 $input       = ($caseSensitive) ? rtrim($input) : strtolower(rtrim($input));
                 fclose($promptInput);
             }
@@ -541,7 +541,7 @@ class Console
     public function append($text = null, $newline = true)
     {
         if ($this->width != 0) {
-            $lines = (strlen($text) > $this->width) ?
+            $lines = (strlen((string)$text) > $this->width) ?
                 explode(PHP_EOL, wordwrap($text, $this->width, PHP_EOL)) : [$text];
         } else {
             $lines = [$text];
@@ -608,10 +608,10 @@ class Console
         foreach ($this->commands as $key => $command) {
             $name   = $command->getName();
             $params = $command->getParams();
-            $length = strlen($name);
+            $length = strlen((string)$name);
 
             if (count($this->helpColors) > 0) {
-                if (strpos($name, ' ') !== false) {
+                if (strpos((string)$name, ' ') !== false) {
                     $name1 = substr($name, 0, strpos($name, ' '));
                     $name2 = substr($name, strpos($name, ' ') + 1);
                     if (isset($this->helpColors[0])) {
@@ -627,7 +627,7 @@ class Console
             }
 
             if (null !== $params) {
-                $length += (strlen($params) + 1);
+                $length += (strlen((string)$params) + 1);
                 $name   .= ' ' . ((isset($this->helpColors[2])) ? $this->colorize($params, $this->helpColors[2]) : $params);
             }
 
