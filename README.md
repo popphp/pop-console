@@ -20,6 +20,11 @@ Install `pop-console` using Composer.
 
     composer require popphp/pop-console
 
+Or, require it in your composer.json file
+
+    "require": {
+        "popphp/pop-console" : "4.0.*"
+    }
 
 BASIC USAGE
 -----------

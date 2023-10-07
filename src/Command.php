@@ -4,7 +4,7 @@
  *
  * @link       https://github.com/popphp/popphp-framework
  * @author     Nick Sagona, III <dev@nolainteractive.com>
- * @copyright  Copyright (c) 2009-2023 NOLA Interactive, LLC. (http://www.nolainteractive.com)
+ * @copyright  Copyright (c) 2009-2024 NOLA Interactive, LLC. (http://www.nolainteractive.com)
  * @license    http://www.popphp.org/license     New BSD License
  */
 
@@ -19,45 +19,47 @@ namespace Pop\Console;
  * @category   Pop
  * @package    Pop\Console
  * @author     Nick Sagona, III <dev@nolainteractive.com>
- * @copyright  Copyright (c) 2009-2023 NOLA Interactive, LLC. (http://www.nolainteractive.com)
+ * @copyright  Copyright (c) 2009-2024 NOLA Interactive, LLC. (http://www.nolainteractive.com)
  * @license    http://www.popphp.org/license     New BSD License
- * @version    3.2.0
+ * @version    4.0.0
  */
 class Command
 {
 
     /**
      * Command name
-     * @var string
+     * @var ?string
      */
-    protected $name = null;
+    protected ?string $name = null;
 
     /**
      * Command params
-     * @var string
+     * @var ?string
      */
-    protected $params = null;
+    protected ?string $params = null;
 
     /**
      * Command help
-     * @var string
+     * @var ?string
      */
-    protected $help = null;
+    protected ?string $help = null;
 
     /**
      * Instantiate the command object
      *
-     * @param  string $name
-     * @param  string $params
-     * @param  string $help
-     * @return Command
+     * @param  string  $name
+     * @param  ?string $params
+     * @param  ?string $help
      */
-    public function __construct($name, $params = null, $help = null)
+    public function __construct(string $name, ?string $params = null, ?string $help = null)
     {
-        $this->name   = $name;
-        $this->params = $params;
-        $this->help   = $help;
-        return $this;
+        $this->setName($name);
+        if ($params !== null) {
+            $this->setParams($params);
+        }
+        if ($help !== null) {
+            $this->setHelp($help);
+        }
     }
 
     /**
@@ -66,7 +68,7 @@ class Command
      * @param  string $name
      * @return Command
      */
-    public function setName($name)
+    public function setName(string $name): Command
     {
         $this->name = $name;
         return $this;
@@ -78,7 +80,7 @@ class Command
      * @param  string $params
      * @return Command
      */
-    public function setParams($params)
+    public function setParams(string $params): Command
     {
         $this->params = $params;
         return $this;
@@ -90,7 +92,7 @@ class Command
      * @param  string $help
      * @return Command
      */
-    public function setHelp($help)
+    public function setHelp(string $help): Command
     {
         $this->help = $help;
         return $this;
@@ -101,7 +103,7 @@ class Command
      *
      * @return string
      */
-    public function getName()
+    public function getName(): string
     {
         return $this->name;
     }
@@ -111,7 +113,7 @@ class Command
      *
      * @return string
      */
-    public function getParams()
+    public function getParams(): string
     {
         return $this->params;
     }
@@ -119,9 +121,9 @@ class Command
     /**
      * Determine if the command has params
      *
-     * @return boolean
+     * @return bool
      */
-    public function hasParams()
+    public function hasParams(): bool
     {
         return (null !== $this->params);
     }
@@ -129,9 +131,9 @@ class Command
     /**
      * Get the command help
      *
-     * @return string
+     * @return string|null
      */
-    public function getHelp()
+    public function getHelp(): string|null
     {
         return $this->help;
     }
@@ -139,9 +141,9 @@ class Command
     /**
      * Determine if the command has help
      *
-     * @return boolean
+     * @return bool
      */
-    public function hasHelp()
+    public function hasHelp(): bool
     {
         return (null !== $this->help);
     }
@@ -151,7 +153,7 @@ class Command
      *
      * @return string
      */
-    public function __toString()
+    public function __toString(): string
     {
         return $this->name . ((null !== $this->params) ? ' ' . $this->params : null);
     }

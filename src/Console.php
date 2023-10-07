@@ -4,7 +4,7 @@
  *
  * @link       https://github.com/popphp/popphp-framework
  * @author     Nick Sagona, III <dev@nolainteractive.com>
- * @copyright  Copyright (c) 2009-2023 NOLA Interactive, LLC. (http://www.nolainteractive.com)
+ * @copyright  Copyright (c) 2009-2024 NOLA Interactive, LLC. (http://www.nolainteractive.com)
  * @license    http://www.popphp.org/license     New BSD License
  */
 
@@ -13,7 +13,8 @@
  */
 namespace Pop\Console;
 
-use Pop\Router\Match;
+use Pop\Router\Match\Cli;
+use ReflectionClass;
 
 /**
  * Console class
@@ -21,9 +22,9 @@ use Pop\Router\Match;
  * @category   Pop
  * @package    Pop\Console
  * @author     Nick Sagona, III <dev@nolainteractive.com>
- * @copyright  Copyright (c) 2009-2023 NOLA Interactive, LLC. (http://www.nolainteractive.com)
+ * @copyright  Copyright (c) 2009-2024 NOLA Interactive, LLC. (http://www.nolainteractive.com)
  * @license    http://www.popphp.org/license     New BSD License
- * @version    3.2.0
+ * @version    4.0.0
  */
 class Console
 {
@@ -53,68 +54,68 @@ class Console
      * Console character width
      * @var int
      */
-    protected $width = 80;
+    protected int $width = 80;
 
     /**
      * Console indentation
-     * @var string
+     * @var ?string
      */
-    protected $indent = null;
+    protected ?string $indent = null;
 
     /**
      * Console response body
-     * @var string
+     * @var ?string
      */
-    protected $response = null;
+    protected ?string $response = null;
 
     /**
      * Commands
      * @var array
      */
-    protected $commands = [];
+    protected array $commands = [];
 
     /**
      * Console header
-     * @var string
+     * @var ?string
      */
-    protected $header = null;
+    protected ?string $header = null;
 
     /**
      * Flag for if console header has been sent
-     * @var boolean
+     * @var bool
      */
-    protected $headerSent = false;
+    protected bool $headerSent = false;
 
     /**
      * Console footer
-     * @var string
+     * @var ?string
      */
-    protected $footer = null;
+    protected ?string $footer = null;
 
     /**
      * Help colors
      * @var array
      */
-    protected $helpColors = [];
+    protected array $helpColors = [];
 
     /**
      * SERVER array
      * @var array
      */
-    protected $server = [];
+    protected array $server = [];
 
     /**
      * ENV array
      * @var array
      */
-    protected $env    = [];
+    protected array $env = [];
 
     /**
      * Color map of ansi values
      *
      * @var array
      */
-    protected static $colorMap = [
+    protected static array $colorMap = [
         'foreground' => [
             self::NORMAL       => '22;39',
             self::BLACK        => '0;30',
@@ -153,7 +154,7 @@ class Console
      * @param  int    $width
      * @param  string $indent
      */
-    public function __construct($width = 80, $indent = '    ')
+    public function __construct(int $width = 80, string $indent = '    ')
     {
         $this->setWidth($width);
         $this->setIndent($indent);
@@ -168,7 +169,7 @@ class Console
      * @param  int $width
      * @return Console
      */
-    public function setWidth($width)
+    public function setWidth(int $width): Console
     {
         $this->width = (int)$width;
         return $this;
@@ -177,10 +178,10 @@ class Console
     /**
      * Set the indentation of the console object
      *
-     * @param  string $indent
+     * @param  ?string $indent
      * @return Console
      */
-    public function setIndent($indent = null)
+    public function setIndent(?string $indent = null): Console
     {
         $this->indent = $indent;
         return $this;
@@ -192,7 +193,7 @@ class Console
      * @param  string $header
      * @return Console
      */
-    public function setHeader($header)
+    public function setHeader(string $header): Console
     {
         $this->header = $header;
         return $this;
@@ -204,7 +205,7 @@ class Console
      * @param  string $footer
      * @return Console
      */
-    public function setFooter($footer)
+    public function setFooter(string $footer): Console
     {
         $this->footer = $footer;
         return $this;
@@ -213,10 +214,10 @@ class Console
     /**
      * Set the console header sent flag
      *
-     * @param  boolean $headerSent
+     * @param  bool $headerSent
      * @return Console
      */
-    public function setHeaderSent($headerSent = true)
+    public function setHeaderSent(bool $headerSent = true): Console
     {
         $this->headerSent = (bool)$headerSent;
         return $this;
@@ -225,21 +226,25 @@ class Console
     /**
      * Set the console help colors
      *
-     * @param  int $color1
-     * @param  int $color2
-     * @param  int $color3
+     * @param  int  $color1
+     * @param  ?int $color2
+     * @param  ?int $color3
+     * @param  ?int $color4
      * @return Console
      */
-    public function setHelpColors($color1, $color2 = null, $color3 = null)
+    public function setHelpColors(int $color1, ?int $color2 = null, ?int $color3 = null, ?int $color4 = null): Console
     {
         $this->helpColors = [
             $color1
         ];
-        if (null !== $color2) {
+        if ($color2 !== null) {
             $this->helpColors[] = $color2;
         }
-        if (null !== $color3) {
+        if ($color3 !== null) {
             $this->helpColors[] = $color3;
+        }
+        if ($color4 !== null) {
+            $this->helpColors[] = $color4;
         }
 
         return $this;
@@ -250,7 +255,7 @@ class Console
      *
      * @return int
      */
-    public function getWidth()
+    public function getWidth(): int
     {
         return $this->width;
     }
@@ -260,7 +265,7 @@ class Console
      *
      * @return string
      */
-    public function getIndent()
+    public function getIndent(): string
     {
         return $this->indent;
     }
@@ -268,10 +273,10 @@ class Console
     /**
      * Get the console header
      *
-     * @param  boolean $formatted
+     * @param  bool $formatted
      * @return string
      */
-    public function getHeader($formatted = false)
+    public function getHeader(bool $formatted = false): string
     {
         return ($formatted) ? $this->formatTemplate($this->header) : $this->header;
     }
@@ -279,10 +284,10 @@ class Console
     /**
      * Get the console footer
      *
-     * @param  boolean $formatted
+     * @param  bool $formatted
      * @return string
      */
-    public function getFooter($formatted = false)
+    public function getFooter(bool $formatted = false): string
     {
         return ($formatted) ? $this->formatTemplate($this->footer) : $this->footer;
     }
@@ -290,9 +295,9 @@ class Console
     /**
      * Get the console header sent flag
      *
-     * @return boolean
+     * @return bool
      */
-    public function getHeaderSent()
+    public function getHeaderSent(): bool
     {
         return $this->headerSent;
     }
@@ -302,38 +307,48 @@ class Console
      *
      * @return array
      */
-    public function getHelpColors()
+    public function getHelpColors(): array
     {
         return $this->helpColors;
     }
 
     /**
+     * Get the console help colors
+     *
+     * @return array
+     */
+    public function getAvailableColors(): array
+    {
+        return (new ReflectionClass('Pop\Console\Console'))->getConstants();
+    }
+
+    /**
      * Get a value from $_SERVER, or the whole array
      *
-     * @param  string $key
-     * @return string|array
+     * @param  ?string $key
+     * @return string|array|null
      */
-    public function getServer($key = null)
+    public function getServer(?string $key = null): string|array|null
     {
-        if (null === $key) {
+        if ($key === null) {
             return $this->server;
         } else {
-            return (isset($this->server[$key])) ? $this->server[$key] : null;
+            return $this->server[$key] ?? null;
         }
     }
 
     /**
      * Get a value from $_ENV, or the whole array
      *
-     * @param  string $key
-     * @return string|array
+     * @param  ?string $key
+     * @return string|array|null
      */
-    public function getEnv($key = null)
+    public function getEnv(?string $key = null): string|array|null
     {
-        if (null === $key) {
+        if ($key === null) {
             return $this->env;
         } else {
-            return (isset($this->env[$key])) ? $this->env[$key] : null;
+            return $this->env[$key] ?? null;
         }
     }
 
@@ -343,7 +358,7 @@ class Console
      * @param  Command $command
      * @return Console
      */
-    public function addCommand(Command $command)
+    public function addCommand(Command $command): Console
     {
         $this->commands[$command->getName()] = $command;
         return $this;
@@ -355,7 +370,7 @@ class Console
      * @param  array $commands
      * @return Console
      */
-    public function addCommands(array $commands)
+    public function addCommands(array $commands): Console
     {
         foreach ($commands as $command) {
             $this->addCommand($command);
@@ -368,7 +383,7 @@ class Console
      *
      * @return array
      */
-    public function getCommands()
+    public function getCommands(): array
     {
         return $this->commands;
     }
@@ -377,20 +392,20 @@ class Console
      * Get a command
      *
      * @param  string $command
-     * @return Command
+     * @return Command|null
      */
-    public function getCommand($command)
+    public function getCommand(string $command): Command|null
     {
-        return (isset($this->commands[$command])) ? $this->commands[$command] : null;
+        return $this->commands[$command] ?? null;
     }
 
     /**
      * Check if the console object has a command
      *
      * @param  string $command
-     * @return boolean
+     * @return bool
      */
-    public function hasCommand($command)
+    public function hasCommand(string $command): bool
     {
         return isset($this->commands[$command]);
     }
@@ -398,11 +413,11 @@ class Console
     /**
      * Get commands from routes
      *
-     * @param  Match\Cli $routeMatch
-     * @param  string    $scriptName
+     * @param  Cli     $routeMatch
+     * @param  ?string $scriptName
      * @return array
      */
-    public function getCommandsFromRoutes(Match\Cli $routeMatch, $scriptName = null)
+    public function getCommandsFromRoutes(Cli $routeMatch, ?string $scriptName = null): array
     {
         $routeMatch->match();
 
@@ -417,7 +432,7 @@ class Console
             $help        = (isset($commandRoutes[$name]) && isset($commandRoutes[$name]['help'])) ?
                 $commandRoutes[$name]['help'] : null;
 
-            if (null !== $scriptName) {
+            if ($scriptName !== null) {
                 $commandName = $scriptName . ' ' . $commandName;
             }
 
@@ -430,11 +445,11 @@ class Console
     /**
      * Add commands from routes
      *
-     * @param  Match\Cli $routeMatch
-     * @param  string    $scriptName
+     * @param  Cli     $routeMatch
+     * @param  ?string $scriptName
      * @return Console
      */
-    public function addCommandsFromRoutes(Match\Cli $routeMatch, $scriptName = null)
+    public function addCommandsFromRoutes(Cli $routeMatch, ?string $scriptName = null): Console
     {
         $commands = $this->getCommandsFromRoutes($routeMatch, $scriptName);
 
@@ -448,15 +463,16 @@ class Console
     /**
      * Get a help
      *
-     * @param  string $command
-     * @return string
+     * @param  ?string $command
+     * @return string|null
      */
-    public function help($command = null)
+    public function help(?string $command = null): string|null
     {
-        if (null !== $command) {
-            return (isset($this->commands[$command])) ? $this->commands[$command]->getHelp() : null;
+        if ($command !== null) {
+            return $this->commands[$command]?->getHelp();
         } else {
             $this->displayHelp();
+            return null;
         }
     }
 
@@ -464,11 +480,11 @@ class Console
      * Colorize a string for output
      *
      * @param  string $string
-     * @param  int    $fg
-     * @param  int    $bg
+     * @param  ?int   $fg
+     * @param  ?int   $bg
      * @return string
      */
-    public function colorize($string, $fg = null, $bg = null)
+    public function colorize(string $string, ?int $fg = null, ?int $bg = null): string
     {
         if (stripos(PHP_OS, 'win') === false) {
             $fgColor = $this->getColorCode($fg, 'foreground');
@@ -483,16 +499,18 @@ class Console
     /**
      * Get input from the prompt
      *
-     * @param  string  $prompt
-     * @param  array   $options
-     * @param  boolean $caseSensitive
-     * @param  int     $length
-     * @param  boolean $withHeaders
+     * @param  string $prompt
+     * @param  ?array $options
+     * @param  bool   $caseSensitive
+     * @param  int    $length
+     * @param  bool   $withHeaders
      * @return string
      */
-    public function prompt($prompt, array $options = null, $caseSensitive = false, $length = 500, $withHeaders = true)
+    public function prompt(
+        string $prompt, ?array $options = null, bool $caseSensitive = false, int $length = 500, bool $withHeaders = true
+    ): string
     {
-        if (($withHeaders) && (null !== $this->header)) {
+        if (($withHeaders) && ($this->header !== null)) {
             $this->headerSent = true;
             echo $this->formatTemplate($this->header) . $this->indent . $prompt;
         } else {
@@ -501,7 +519,10 @@ class Console
 
         $input = null;
 
-        if (null !== $options) {
+        /**
+         * $_SERVER['X_POP_CONSOLE_INPUT'] is for testing purposes only
+         */
+        if ($options !== null) {
             $length = 0;
             foreach ($options as $key => $value) {
                 $options[$key] = ($caseSensitive) ? $value : strtolower((string)$value);
@@ -511,20 +532,14 @@ class Console
             }
 
             while (!in_array($input, $options)) {
-                if (null !== $input) {
+                if ($input !== null) {
                     echo $this->indent . $prompt;
                 }
-                $promptInput = fopen('php://stdin', 'r');
-                $input       = fgets($promptInput, strlen((string)$prompt) . $length);
-                $input       = ($caseSensitive) ? rtrim($input) : strtolower(rtrim($input));
-                fclose($promptInput);
+                $input = $this->getPromptInput($prompt, $length, $caseSensitive);
             }
         } else {
-            while (null === $input) {
-                $promptInput = fopen('php://stdin', 'r');
-                $input       = fgets($promptInput, strlen((string)$prompt) + $length);
-                $input       = ($caseSensitive) ? rtrim($input) : strtolower(rtrim($input));
-                fclose($promptInput);
+            while ($input === null) {
+                $input = $this->getPromptInput($prompt, $length, $caseSensitive);
             }
         }
 
@@ -534,11 +549,11 @@ class Console
     /**
      * Append a string of text to the response body
      *
-     * @param  string  $text
-     * @param  boolean $newline
+     * @param  ?string $text
+     * @param  bool    $newline
      * @return Console
      */
-    public function append($text = null, $newline = true)
+    public function append(?string $text = null, bool $newline = true): Console
     {
         if ($this->width != 0) {
             $lines = (strlen((string)$text) > $this->width) ?
@@ -548,20 +563,21 @@ class Console
         }
 
         foreach ($lines as $line) {
-            $this->response .=  $this->indent . $line . (($newline) ? PHP_EOL : null);
+            $this->response .= $this->indent . $line . (($newline) ? PHP_EOL : null);
         }
+
         return $this;
     }
 
     /**
      * Write a string of text to the response body and send the response
      *
-     * @param  string $text
-     * @param  boolean $newline
-     * @param  boolean $withHeaders
+     * @param  ?string $text
+     * @param  bool    $newline
+     * @param  bool    $withHeaders
      * @return Console
      */
-    public function write($text = null, $newline = true, $withHeaders = true)
+    public function write(?string $text = null, bool $newline = true, bool $withHeaders = true): Console
     {
         $this->append($text, $newline);
         $this->send($withHeaders);
@@ -571,16 +587,16 @@ class Console
     /**
      * Send the response
      *
-     * @param  boolean $withHeaders
+     * @param  bool $withHeaders
      * @return Console
      */
-    public function send($withHeaders = true)
+    public function send(bool $withHeaders = true): Console
     {
         if ($withHeaders) {
-            if ((null !== $this->header) && !($this->headerSent)) {
+            if (($this->header !== null) && !($this->headerSent)) {
                 $this->response = $this->formatTemplate($this->header) . $this->response;
             }
-            if (null !== $this->footer) {
+            if ($this->footer !== null) {
                 $this->response .= $this->formatTemplate($this->footer);
             }
         }
@@ -595,13 +611,13 @@ class Console
      *
      * @return void
      */
-    public function displayHelp()
+    public function displayHelp(): void
     {
         $this->response = null;
         $commands       = [];
         $commandLengths = [];
 
-        if (null !== $this->header) {
+        if ($this->header !== null) {
             $this->response .= $this->formatTemplate($this->header);
         }
 
@@ -611,7 +627,7 @@ class Console
             $length = strlen((string)$name);
 
             if (count($this->helpColors) > 0) {
-                if (strpos((string)$name, ' ') !== false) {
+                if (str_contains((string)$name, ' ')) {
                     $name1 = substr($name, 0, strpos($name, ' '));
                     $name2 = substr($name, strpos($name, ' ') + 1);
                     if (isset($this->helpColors[0])) {
@@ -626,9 +642,23 @@ class Console
                 }
             }
 
-            if (null !== $params) {
+            if ($params !== null) {
                 $length += (strlen((string)$params) + 1);
-                $name   .= ' ' . ((isset($this->helpColors[2])) ? $this->colorize($params, $this->helpColors[2]) : $params);
+                if (str_contains($params, '-') && str_contains($params, '<')) {
+                    $pars = explode(' ', $params);
+                    if (count($pars) > 0) {
+                        $optionFirst = str_contains($pars[0], '-');
+                        $colorIndex  = 2;
+                        foreach ($pars as $p) {
+                            if ((($optionFirst) && str_contains($p, '<')) || ((!$optionFirst) && str_contains($p, '-'))) {
+                                $colorIndex = 3;
+                            }
+                            $name .= ' ' . ((isset($this->helpColors[$colorIndex])) ? $this->colorize($p, $this->helpColors[$colorIndex]) : $p);
+                        }
+                    }
+                } else {
+                    $name .= ' ' . ((isset($this->helpColors[2])) ? $this->colorize($params, $this->helpColors[2]) : $params);
+                }
             }
 
             $commands[$key]       = $this->indent . $name;
@@ -672,7 +702,7 @@ class Console
             $i++;
         }
 
-        if (null !== $this->footer) {
+        if ($this->footer !== null) {
             $this->response .= $this->formatTemplate($this->footer);
         }
 
@@ -684,7 +714,7 @@ class Console
      *
      * @return void
      */
-    public function clear()
+    public function clear(): void
     {
         echo chr(27) . "[2J" . chr(27) . "[;H";
     }
@@ -692,13 +722,13 @@ class Console
     /**
      * Get the color code from the color map
      *
-     * @param  int    $color
+     * @param  ?int   $color
      * @param  string $type
      * @return mixed
      */
-    protected function getColorCode($color, $type = 'foreground')
+    protected function getColorCode(?int $color = null, string $type = 'foreground'): mixed
     {
-        if (isset(static::$colorMap[$type]) && isset(static::$colorMap[$type][$color])) {
+        if (!empty($color) && isset(static::$colorMap[$type]) && isset(static::$colorMap[$type][$color])) {
             return static::$colorMap[$type][$color];
         }
         return null;
@@ -710,14 +740,14 @@ class Console
      * @param  string $template
      * @return string
      */
-    protected function formatTemplate($template)
+    protected function formatTemplate(string $template): string
     {
         $format = null;
 
-        if (strpos($template, "\n") !== false) {
+        if (str_contains($template, "\n")) {
             $templateLines = explode("\n", $template);
             foreach ($templateLines as $line) {
-                $line = trim($line);
+                $line    = trim($line);
                 $format .= $this->indent . $line . PHP_EOL;
             }
         } else {
@@ -725,6 +755,29 @@ class Console
         }
 
         return $format;
+    }
+
+    /**
+     * Get prompt input
+     *
+     * @param  string $prompt
+     * @param  int    $length
+     * @param  bool   $caseSensitive
+     * @return string
+     */
+    protected function getPromptInput(string $prompt, int $length = 500, bool $caseSensitive = false): string
+    {
+        if (isset($_SERVER['X_POP_CONSOLE_INPUT'])) {
+            $input = ($caseSensitive) ?
+                rtrim($_SERVER['X_POP_CONSOLE_INPUT']) : strtolower(rtrim($_SERVER['X_POP_CONSOLE_INPUT']));
+        } else {
+            $promptInput = fopen('php://stdin', 'r');
+            $input       = fgets($promptInput, strlen((string)$prompt) + $length);
+            $input       = ($caseSensitive) ? rtrim($input) : strtolower(rtrim($input));
+            fclose($promptInput);
+        }
+
+        return $input;
     }
 
 }

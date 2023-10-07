@@ -39,11 +39,22 @@ class ConsoleTest extends TestCase
         $this->assertTrue($console->getHeaderSent());
     }
 
+    public function testGetAvailableColors()
+    {
+        $console = new Console();
+        $colors = $console->getAvailableColors();
+        $this->assertEquals(17, count($colors));
+        $this->assertTrue(isset($colors['MAGENTA']));
+        $this->assertEquals(6, $colors['MAGENTA']);
+        $this->assertTrue(isset($colors['BOLD_WHITE']));
+        $this->assertEquals(16, $colors['BOLD_WHITE']);
+    }
+
     public function testSetAndGetHelpColors()
     {
         $console = new Console();
-        $console->setHelpColors(Console::RED, Console::WHITE, Console::BLUE);
-        $this->assertEquals(3, count($console->getHelpColors()));
+        $console->setHelpColors(Console::RED, Console::WHITE, Console::BLUE, Console::MAGENTA);
+        $this->assertEquals(4, count($console->getHelpColors()));
     }
 
     public function testGetServer()
@@ -186,7 +197,7 @@ HEADER
     public function testBadColor()
     {
         $console = new Console();
-        $string = $console->colorize('Hello World', 'BAD_FG', 'BAD_BG');
+        $string = $console->colorize('Hello World', 400, 500);
         $this->assertStringContainsString('Hello World', $string);
     }
 
@@ -231,6 +242,59 @@ HEADER
         $console->clear();
         $result = ob_get_clean();
         $this->assertNotNull($result);
+    }
+
+    public function testPrompt()
+    {
+        $_SERVER['X_POP_CONSOLE_INPUT'] = 'y';
+
+        ob_start();
+        $console = new Console();
+        $answer  = $console->prompt('Test prompt: ');
+        $result = ob_get_clean();
+
+        $this->assertEquals('y', $answer);
+    }
+
+    public function testPromptWithIndent()
+    {
+        $_SERVER['X_POP_CONSOLE_INPUT'] = 'y';
+
+        ob_start();
+        $console = new Console();
+        $console->setHeader('Test Header:');
+        $console->setIndent('    ');
+        $answer  = $console->prompt('Test prompt: ');
+        $result = ob_get_clean();
+
+        $this->assertTrue(str_contains($result, '    Test prompt: '));
+    }
+
+    public function testPromptWithHeader()
+    {
+        $_SERVER['X_POP_CONSOLE_INPUT'] = 'y';
+
+        ob_start();
+        $console = new Console();
+        $console->setHeader('Test Header:');
+        $answer  = $console->prompt('Test prompt: ');
+        $result = ob_get_clean();
+
+        $this->assertTrue(str_contains($result, 'Test Header:'));
+    }
+
+    public function testPromptWithOptions()
+    {
+        $_SERVER['X_POP_CONSOLE_INPUT'] = 'n';
+
+        ob_start();
+        $console = new Console();
+        $console->setIndent('    ');
+        $answer  = $console->prompt('Test prompt: ', ['Y', 'N']);
+        $result = ob_get_clean();
+
+        $this->assertEquals('n', $answer);
+        $this->assertTrue(str_contains($result, '    Test prompt: '));
     }
 
 }
