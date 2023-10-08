@@ -650,14 +650,17 @@ class Console
                         $optionFirst = str_contains($pars[0], '-');
                         $colorIndex  = 2;
                         foreach ($pars as $p) {
-                            if ((($optionFirst) && str_contains($p, '<')) || ((!$optionFirst) && str_contains($p, '-'))) {
+                            if (isset($this->helpColors[3]) &&
+                                (($optionFirst) && str_contains($p, '<')) || ((!$optionFirst) && str_contains($p, '-'))) {
                                 $colorIndex = 3;
                             }
-                            $name .= ' ' . ((isset($this->helpColors[$colorIndex])) ? $this->colorize($p, $this->helpColors[$colorIndex]) : $p);
+                            $name .= ' ' . ((isset($this->helpColors[$colorIndex])) ?
+                                    $this->colorize($p, $this->helpColors[$colorIndex]) : $p);
                         }
                     }
                 } else {
-                    $name .= ' ' . ((isset($this->helpColors[2])) ? $this->colorize($params, $this->helpColors[2]) : $params);
+                    $name .= ' ' . ((isset($this->helpColors[2])) ?
+                            $this->colorize($params, $this->helpColors[2]) : $params);
                 }
             }
 
