@@ -101,9 +101,9 @@ class Command
     /**
      * Get the command name
      *
-     * @return string
+     * @return ?string
      */
-    public function getName(): string
+    public function getName(): ?string
     {
         return $this->name;
     }
@@ -111,9 +111,9 @@ class Command
     /**
      * Get the command params
      *
-     * @return string
+     * @return ?string
      */
-    public function getParams(): string
+    public function getParams(): ?string
     {
         return $this->params;
     }
@@ -131,9 +131,9 @@ class Command
     /**
      * Get the command help
      *
-     * @return string|null
+     * @return ?string
      */
-    public function getHelp(): string|null
+    public function getHelp(): ?string
     {
         return $this->help;
     }

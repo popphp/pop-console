@@ -263,9 +263,9 @@ class Console
     /**
      * Get the indentation of the console object
      *
-     * @return string
+     * @return ?string
      */
-    public function getIndent(): string
+    public function getIndent(): ?string
     {
         return $this->indent;
     }
@@ -274,9 +274,9 @@ class Console
      * Get the console header
      *
      * @param  bool $formatted
-     * @return string
+     * @return ?string
      */
-    public function getHeader(bool $formatted = false): string
+    public function getHeader(bool $formatted = false): ?string
     {
         return ($formatted) ? $this->formatTemplate($this->header) : $this->header;
     }
@@ -285,9 +285,9 @@ class Console
      * Get the console footer
      *
      * @param  bool $formatted
-     * @return string
+     * @return ?string
      */
-    public function getFooter(bool $formatted = false): string
+    public function getFooter(bool $formatted = false): ?string
     {
         return ($formatted) ? $this->formatTemplate($this->footer) : $this->footer;
     }
