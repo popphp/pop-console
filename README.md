@@ -14,6 +14,7 @@ pop-console
 * [Colors](#colors)
 * [Prompt](#prompt)
 * [Commands](#commands)
+* [Help Screen](#help-screen)
 
 Overview
 --------
@@ -314,8 +315,12 @@ Let's take a look at the abstract constructor of the `pop-kettle` component.
         $this->application = $application;
         $this->console     = $console;
 
-        $this->console->setHelpColors(Console::BOLD_CYAN, Console::BOLD_GREEN, Console::BOLD_MAGENTA);
-        $this->console->addCommandsFromRoutes($application->router()->getRouteMatch(), './kettle');
+        $this->console->setHelpColors(
+            Console::BOLD_CYAN, Console::BOLD_GREEN, Console::BOLD_MAGENTA
+            );
+        $this->console->addCommandsFromRoutes(
+            $application->router()->getRouteMatch(), './kettle'
+        );
     }
 
     public function help()
