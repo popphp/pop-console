@@ -213,7 +213,7 @@ use Pop\Console\Console;
 
 $console = new Console();
 $name    = $console->prompt('Please provide your name: ');
-echo '    Hello ' . $name . '!' . PHP_EOL;
+$console->write('Hello ' . $name . '!');
 ```
 
 ```bash
@@ -236,7 +236,7 @@ $letter  = $console->prompt(
     ['A', 'B', 'C', 'D'],
     true
 );
-echo '    Your favorite letter is ' . $letter . '.' . PHP_EOL;
+$console->write('Your favorite letter is ' . $letter . '.');
 ```
 
 ```bash
