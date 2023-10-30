@@ -103,7 +103,7 @@ $console->send();
 ### Setting an indent
 
 By default, an indent of four spaces is set to provide a margin from the edge of the terminal. This can be adjusted
-or turned by passing it to the constructor:
+or turned off by passing it to the constructor:
 
 ```php
 use Pop\Console\Console;
@@ -133,8 +133,8 @@ method `send()` is called. This is useful if you have to take a number of steps 
 before sending it.
 
 Using the method `write()` allows you to produce content to the terminal screen in real time, without
-having to call the `send()` method. This is useful if you need to push something out to the terminal screen
-at that time in the application.
+having to call the `send()` method. This is useful if you need to push content out to the terminal screen
+of the application as you go.
 
 ```php
 use Pop\Console\Console;
