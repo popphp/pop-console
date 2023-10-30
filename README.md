@@ -137,7 +137,9 @@ at that time in the application.
 use Pop\Console\Console;
 
 $console = new Console(40);
-$console->write('Here is some console information. This is a really long string. It will have to wrap.');
+$console->write(
+    'Here is some console information. This is a really long string. It will have to wrap.'
+);
 ```
 
 ### Newlines and Indents
