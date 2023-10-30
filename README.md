@@ -104,7 +104,9 @@ or turned by passing it to the constructor:
 use Pop\Console\Console;
 
 $console = new Console(40, '  ');
-$console->append('Here is some console information using a 2 space indent. It will have to wrap.');
+$console->append(
+    'Here is some console information using a 2 space indent. It will have to wrap.'
+);
 $console->send();
 ```
 
