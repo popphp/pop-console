@@ -551,9 +551,10 @@ class Console
      *
      * @param  ?string $text
      * @param  bool    $newline
+     * @param  bool    $indent
      * @return Console
      */
-    public function append(?string $text = null, bool $newline = true): Console
+    public function append(?string $text = null, bool $newline = true, bool $indent = true): Console
     {
         if ($this->width != 0) {
             $lines = (strlen((string)$text) > $this->width) ?
@@ -563,7 +564,7 @@ class Console
         }
 
         foreach ($lines as $line) {
-            $this->response .= $this->indent . $line . (($newline) ? PHP_EOL : null);
+            $this->response .= (($indent) ? $this->indent : '') . $line . (($newline) ? PHP_EOL : null);
         }
 
         return $this;
@@ -574,12 +575,13 @@ class Console
      *
      * @param  ?string $text
      * @param  bool    $newline
+     * @param  bool    $indent
      * @param  bool    $withHeaders
      * @return Console
      */
-    public function write(?string $text = null, bool $newline = true, bool $withHeaders = true): Console
+    public function write(?string $text = null, bool $newline = true, bool $indent = true, bool $withHeaders = true): Console
     {
-        $this->append($text, $newline);
+        $this->append($text, $newline, $indent);
         $this->send($withHeaders);
         return $this;
     }
