@@ -18,18 +18,18 @@ pop-console
 
 Overview
 --------
-`pop-console` provides a layer to run an application from the console terminal.
-It has support for input commands and options as well ANSI-based console colors.
-It can be easily be used with an application built with Pop to route requests
+`pop-console` provides a layer to run an application from the console terminal and produce formatted
+output to the terminal window. It has support for commands and their parameters, as well ANSI-based
+console colors. It can be easily be used with an application built with Pop to route requests
 from the CLI to the application.
 
 `pop-console` is a component of the [Pop PHP Framework](http://www.popphp.org/).
 
 **Note**
 
-The code below is comprised of basic examples. Ideally, you could wire an application
-to use the console but not for setting routes, controllers and actions. Refer to the
-[Pop PHP Tutorial](https://github.com/popphp/popphp-tutorial) example application to see how to wire up a CLI-based application
+The code below represents basic examples. Ideally, you could wire an application to use the console
+for outputting content to the terminal screen, but not for setting routes, controllers and actions.
+Refer to the [Pop PHP Tutorial](https://github.com/popphp/popphp-tutorial) example application to see how to wire up a CLI-based application
 complete with routes using Pop PHP.
 
 [Top](#pop-console)
