@@ -85,7 +85,9 @@ The allowed text width can be enforced by passing the `$width` parameter to the 
 use Pop\Console\Console;
 
 $console = new Console(40);
-$console->append('Here is some console information. This is a really long string. It will have to wrap.');
+$console->append(
+    'Here is some console information. This is a really long string. It will have to wrap.'
+);
 $console->send();
 ```
 
