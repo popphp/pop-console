@@ -31,6 +31,8 @@ to use the console but not for setting routes, controllers and actions. Refer to
 [Pop PHP Tutorial](https://github.com/popphp/popphp-tutorial) example application to see how to wire up a CLI-based application
 complete with routes using Pop PHP.
 
+[Top](#pop-console)
+
 Install
 -------
 
