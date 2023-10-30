@@ -336,6 +336,6 @@ help screen for `pop-kettle`, which is called within the controller's `help()` m
 
 The output looks like this:
 
-![Pop PDF Form](tests/tmp/console-help.jpg)
+![Console Help](tests/tmp/console-help.jpg)
 
 [Top](#pop-console)
