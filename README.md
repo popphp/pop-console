@@ -329,10 +329,11 @@ Let's take a look at the abstract constructor of the `pop-kettle` component.
     }
 ```
 
-In the above constructor method, the application object pushes the CLI route match object into the
-console method `addCommandsFromRoutes()`. The second parameter `./kettle` is a script prefix to prepend
-to each line of help. Those two lines are all that is needed to produce the colorful and well organized
-help screen for `pop-kettle`, which is called within the controller's `help()` method.
+In the above constructor method, the help colors are set and then the application object pushes
+the CLI route match object into the console method `addCommandsFromRoutes()`. The second parameter
+`./kettle` is a script prefix to prepend to each line of help. Those two lines are all that is needed
+to produce the colorful and well organized help screen for `pop-kettle`, which is called within the
+controller's `help()` method.
 
 The output looks like this:
 
