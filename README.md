@@ -127,7 +127,7 @@ Response Buffer
 
 ### Append vs Write
 
-In the above exmaples, the method `append()` was used in conjunction with `send()`. The method `append()`
+In the above examples, the method `append()` was used in conjunction with `send()`. The method `append()`
 appends the content to the response buffer, which will only get produced to the terminal screen when the
 method `send()` is called. This is useful if you have to take a number of steps to create the response buffer
 before sending it.
