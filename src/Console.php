@@ -30,37 +30,39 @@ class Console
 {
 
     /**
-     * Color indices
+     * Console wrap
+     * @var ?int
      */
-    const NORMAL        = 0;
-    const BLACK         = 1;
-    const RED           = 2;
-    const GREEN         = 3;
-    const YELLOW        = 4;
-    const BLUE          = 5;
-    const MAGENTA       = 6;
-    const CYAN          = 7;
-    const WHITE         = 8;
-    const GRAY          = 9;
-    const BOLD_RED     = 10;
-    const BOLD_GREEN   = 11;
-    const BOLD_YELLOW  = 12;
-    const BOLD_BLUE    = 13;
-    const BOLD_MAGENTA = 14;
-    const BOLD_CYAN    = 15;
-    const BOLD_WHITE   = 16;
+    protected ?int $wrap = null;
 
     /**
-     * Console character width
+     * Console indent
+     * @var string
+     */
+    protected string $indent = '';
+
+    /**
+     * Console padding
+     * @var array
+     */
+    protected array $padding = [
+        'top'    => 0,
+        'right'  => 0,
+        'bottom' => 0,
+        'left'   => 0
+    ];
+
+    /**
+     * Console terminal width
      * @var int
      */
-    protected int $width = 80;
+    protected int $width = 0;
 
     /**
-     * Console indentation
-     * @var ?string
+     * Console terminal height
+     * @var int
      */
-    protected ?string $indent = null;
+    protected int $height = 0;
 
     /**
      * Console response body
@@ -111,53 +113,38 @@ class Console
     protected array $env = [];
 
     /**
-     * Color map of ansi values
-     *
-     * @var array
-     */
-    protected static array $colorMap = [
-        'foreground' => [
-            self::NORMAL       => '22;39',
-            self::BLACK        => '0;30',
-            self::RED          => '0;31',
-            self::GREEN        => '0;32',
-            self::YELLOW       => '0;33',
-            self::BLUE         => '0;34',
-            self::MAGENTA      => '0;35',
-            self::CYAN         => '0;36',
-            self::WHITE        => '0;37',
-            self::GRAY         => '1;30',
-            self::BOLD_RED     => '1;31',
-            self::BOLD_GREEN   => '1;32',
-            self::BOLD_YELLOW  => '1;33',
-            self::BOLD_BLUE    => '1;34',
-            self::BOLD_MAGENTA => '1;35',
-            self::BOLD_CYAN    => '1;36',
-            self::BOLD_WHITE   => '1;37'
-        ],
-        'background' => [
-            self::NORMAL       => '0;49',
-            self::BLACK        => '40',
-            self::RED          => '41',
-            self::GREEN        => '42',
-            self::YELLOW       => '43',
-            self::BLUE         => '44',
-            self::MAGENTA      => '45',
-            self::CYAN         => '46',
-            self::WHITE        => '47'
-        ]
-    ];
-
-    /**
      * Instantiate a new console object
      *
-     * @param  int    $width
-     * @param  string $indent
+     * @param  ?int    $wrap
+     * @param  string  $indent
+     * @param  ?array  $padding
+     * @throws Exception
      */
-    public function __construct(int $width = 80, string $indent = '    ')
+    public function __construct(?int $wrap = null, string $indent = '', ?array $padding = null)
     {
-        $this->setWidth($width);
+        $height = null;
+        $width  = null;
+
+        if (function_exists('exec')) {
+            if (empty(exec('which stty'))) {
+                [$height, $width] = explode(' ', exec('stty size'), 2);
+            } else if (!empty(exec('which tput'))) {
+                $height = exec('tput lines');
+                $width  = exec('tput cols');
+            }
+            if (!empty($height) && !empty($width)) {
+                $this->setHeight($height);
+                $this->setWidth($width);
+            }
+        }
+
+        if ($wrap !== null) {
+            $this->setWrap($wrap);
+        }
         $this->setIndent($indent);
+        if ($padding !== null) {
+            $this->setPadding($padding);
+        }
 
         $this->server = (isset($_SERVER)) ? $_SERVER : [];
         $this->env    = (isset($_ENV))    ? $_ENV    : [];
@@ -166,12 +153,12 @@ class Console
     /**
      * Set the wrap width of the console object
      *
-     * @param  int $width
+     * @param  int $wrap
      * @return Console
      */
-    public function setWidth(int $width): Console
+    public function setWrap(int $wrap): Console
     {
-        $this->width = (int)$width;
+        $this->wrap = (int)$wrap;
         return $this;
     }
 
@@ -184,6 +171,46 @@ class Console
     public function setIndent(?string $indent = null): Console
     {
         $this->indent = $indent;
+        return $this;
+    }
+
+    /**
+     * Set the terminal width of the console object
+     *
+     * @param  int $width
+     * @return Console
+     */
+    public function setWidth(int $width): Console
+    {
+        $this->width = (int)$width;
+        return $this;
+    }
+
+    /**
+     * Set the terminal height of the console object
+     *
+     * @param  int $height
+     * @return Console
+     */
+    public function setHeight(int $height): Console
+    {
+        $this->height = (int)$height;
+        return $this;
+    }
+
+    /**
+     * Set the terminal padding
+     *
+     * @param  array $padding
+     * @throws Exception
+     * @return Console
+     */
+    public function setPadding(array $padding): Console
+    {
+        if (!isset($padding['top']) || !isset($padding['right']) || !isset($padding['bottom']) || !isset($padding['left'])) {
+            throw new Exception('Error: The padding parameters are set correctly (top, right, bottom and left.)');
+        }
+        $this->padding = $padding;
         return $this;
     }
 
@@ -255,9 +282,9 @@ class Console
      *
      * @return int
      */
-    public function getWidth(): int
+    public function getWrap(): int
     {
-        return $this->width;
+        return $this->wrap;
     }
 
     /**
@@ -268,6 +295,68 @@ class Console
     public function getIndent(): ?string
     {
         return $this->indent;
+    }
+
+    /**
+     * Get the terminal width of the console object
+     *
+     * @return int
+     */
+    public function getWidth(): int
+    {
+        return $this->width;
+    }
+
+    /**
+     * Get the terminal height of the console object
+     *
+     * @return int
+     */
+    public function getHeight(): int
+    {
+        return $this->height;
+    }
+
+    /**
+     * Get the terminal padding
+     *
+     * @param  ?string $key
+     * @return array|int|string
+     */
+    public function getPadding(?string $key = null): array|int|string
+    {
+        return (($key !== null) && isset($this->padding[$key])) ? $this->padding[$key] : $this->padding;
+    }
+
+    /**
+     * Has terminal width
+     *
+     * @return bool
+     */
+    public function hasWidth(): bool
+    {
+        return !empty($this->width);
+    }
+
+    /**
+     * Has terminal height
+     *
+     * @return bool
+     */
+    public function hasHeight(): bool
+    {
+        return !empty($this->height);
+    }
+
+    /**
+     * Has terminal padding
+     *
+     * @param  string $key
+     * @return bool
+     */
+    public function hasPadding(string $key): bool
+    {
+        return !empty($this->padding[$key]);
     }
 
     /**
@@ -319,7 +408,7 @@ class Console
      */
     public function getAvailableColors(): array
     {
-        return (new ReflectionClass('Pop\Console\Console'))->getConstants();
+        return (new ReflectionClass('Pop\Console\Color'))->getConstants();
     }
 
     /**
@@ -477,26 +566,6 @@ class Console
     }
 
     /**
-     * Colorize a string for output
-     *
-     * @param  string $string
-     * @param  ?int   $fg
-     * @param  ?int   $bg
-     * @return string
-     */
-    public function colorize(string $string, ?int $fg = null, ?int $bg = null): string
-    {
-        if (stripos(PHP_OS, 'win') === false) {
-            $fgColor = $this->getColorCode($fg, 'foreground');
-            $bgColor = $this->getColorCode($bg, 'background');
-            return ($fgColor !== null ? "\x1b[" . $fgColor . 'm' : '') .
-                ($bgColor !== null ? "\x1b[" . $bgColor . 'm' : '') . $string . "\x1b[0m";
-        } else {
-            return $string;
-        }
-    }
-
-    /**
      * Get input from the prompt
      *
      * @param  string $prompt
@@ -556,9 +625,9 @@ class Console
      */
     public function append(?string $text = null, bool $newline = true, bool $indent = true): Console
     {
-        if ($this->width != 0) {
-            $lines = (strlen((string)$text) > $this->width) ?
-                explode(PHP_EOL, wordwrap($text, $this->width, PHP_EOL)) : [$text];
+        if ($this->wrap != 0) {
+            $lines = (strlen((string)$text) > $this->wrap) ?
+                explode(PHP_EOL, wordwrap($text, $this->wrap, PHP_EOL)) : [$text];
         } else {
             $lines = [$text];
         }
@@ -633,14 +702,14 @@ class Console
                     $name1 = substr($name, 0, strpos($name, ' '));
                     $name2 = substr($name, strpos($name, ' ') + 1);
                     if (isset($this->helpColors[0])) {
-                        $name1 = $this->colorize($name1, $this->helpColors[0]);
+                        $name1 = Color::colorize($name1, $this->helpColors[0]);
                     }
                     if (isset($this->helpColors[1])) {
-                        $name2 = $this->colorize($name2, $this->helpColors[1]);
+                        $name2 = Color::colorize($name2, $this->helpColors[1]);
                     }
                     $name = $name1 . ' ' . $name2;
                 } else if (isset($this->helpColors[0])){
-                    $name = $this->colorize($name, $this->helpColors[0]);
+                    $name = Color::colorize($name, $this->helpColors[0]);
                 }
             }
 
@@ -657,12 +726,12 @@ class Console
                                 $colorIndex = 3;
                             }
                             $name .= ' ' . ((isset($this->helpColors[$colorIndex])) ?
-                                    $this->colorize($p, $this->helpColors[$colorIndex]) : $p);
+                                Color::colorize($p, $this->helpColors[$colorIndex]) : $p);
                         }
                     }
                 } else {
                     $name .= ' ' . ((isset($this->helpColors[2])) ?
-                            $this->colorize($params, $this->helpColors[2]) : $params);
+                        Color::colorize($params, $this->helpColors[2]) : $params);
                 }
             }
 
@@ -680,12 +749,12 @@ class Console
                 $pad  = ($commandLengths[$key] < $maxLength) ?
                     str_repeat(' ', $maxLength - $commandLengths[$key]) . '    ' : '    ';
 
-                if (strlen((string)$this->commands[$key] . $pad . $help) > $this->width) {
+                if (strlen((string)$this->commands[$key] . $pad . $help) > $this->wrap) {
                     if (!$wrapped) {
                         $this->response .= PHP_EOL;
                     }
 
-                    $offset = $this->width - strlen((string)$this->commands[$key] . $pad);
+                    $offset = $this->wrap - strlen((string)$this->commands[$key] . $pad);
                     $lines  = explode(PHP_EOL, wordwrap($help, $offset, PHP_EOL));
                     foreach ($lines as $i => $line) {
                         $this->response .= ($i == 0) ?
@@ -722,21 +791,6 @@ class Console
     public function clear(): void
     {
         echo chr(27) . "[2J" . chr(27) . "[;H";
-    }
-
-    /**
-     * Get the color code from the color map
-     *
-     * @param  ?int   $color
-     * @param  string $type
-     * @return mixed
-     */
-    protected function getColorCode(?int $color = null, string $type = 'foreground'): mixed
-    {
-        if (!empty($color) && isset(static::$colorMap[$type]) && isset(static::$colorMap[$type][$color])) {
-            return static::$colorMap[$type][$color];
-        }
-        return null;
     }
 
     /**
