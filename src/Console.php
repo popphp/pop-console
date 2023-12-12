@@ -37,9 +37,9 @@ class Console
 
     /**
      * Console margin
-     * @var int
+     * @var ?int
      */
-    protected int $margin = 0;
+    protected ?int $margin = null;
 
     /**
      * Console terminal width
@@ -104,10 +104,10 @@ class Console
     /**
      * Instantiate a new console object
      *
-     * @param  ?int       $wrap
-     * @param  int|string $margin
+     * @param  ?int            $wrap
+     * @param  int|string|null $margin
      */
-    public function __construct(?int $wrap = 80, int|string $margin = 4)
+    public function __construct(?int $wrap = 80, int|string|null $margin = 4)
     {
         $height = null;
         $width  = null;
@@ -299,7 +299,7 @@ class Console
      */
     public function getIndent(): string
     {
-        return str_repeat(' ', $this->margin);
+        return str_repeat(' ', (int)$this->margin);
     }
 
     /**
@@ -602,7 +602,7 @@ class Console
             if (!empty($this->wrap)) {
                 $size = $this->wrap;
             } else if (!empty($this->width)) {
-                $size = $this->width - ($this->margin * 2);
+                $size = $this->width - ((int)$this->margin * 2);
             }
         }
 
@@ -633,7 +633,7 @@ class Console
             if (!empty($this->wrap) && (strlen($string) > $this->wrap)) {
                 $size = $this->wrap;
             } else if (!empty($this->width) && (strlen($string) > $this->width)) {
-                $size = $this->width - ($this->margin * 2);
+                $size = $this->width - ((int)$this->margin * 2);
             } else {
                 $size = strlen($string);
             }
@@ -641,7 +641,7 @@ class Console
             if (!empty($this->wrap)) {
                 $size = $this->wrap;
             } else if (!empty($this->width)) {
-                $size = $this->width - ($this->margin * 2);
+                $size = $this->width - ((int)$this->margin * 2);
             }
         }
 
@@ -727,7 +727,7 @@ class Console
             if (!empty($this->wrap) && (strlen($message) > $this->wrap)) {
                 $size = $this->wrap;
             } else if (!empty($this->width) && (strlen($message) > $this->width)) {
-                $size = $this->width - ($this->margin * 2);
+                $size = $this->width - ((int)$this->margin * 2);
             } else {
                 $size = strlen($message) + ($innerPad * 2);
             }
@@ -735,7 +735,7 @@ class Console
             if (!empty($this->wrap)) {
                 $size = $this->wrap;
             } else if (!empty($this->width)) {
-                $size = $this->width - ($this->margin * 2);
+                $size = $this->width - ((int)$this->margin * 2);
             }
         }
 
@@ -789,7 +789,7 @@ class Console
             if (!empty($this->wrap) && (strlen($message) > $this->wrap)) {
                 $size = $this->wrap;
             } else if (!empty($this->width) && (strlen($message) > $this->width)) {
-                $size = $this->width - ($this->margin * 2);
+                $size = $this->width - ((int)$this->margin * 2);
             } else {
                 $size = strlen($message) + ($innerPad * 2);
             }
@@ -797,7 +797,7 @@ class Console
             if (!empty($this->wrap)) {
                 $size = $this->wrap;
             } else if (!empty($this->width)) {
-                $size = $this->width - ($this->margin * 2);
+                $size = $this->width - ((int)$this->margin * 2);
             }
         }
 
@@ -1069,8 +1069,8 @@ class Console
             $lines = (strlen((string)$text) > $this->wrap) ?
                 explode(PHP_EOL, wordwrap($text, $this->wrap, PHP_EOL)) : [$text];
         } else if (!empty($this->width)) {
-            $lines = (strlen((string)$text) > ($this->width - ($this->margin * 2))) ?
-                explode(PHP_EOL, wordwrap($text, ($this->width - ($this->margin * 2)), PHP_EOL)) : [$text];
+            $lines = (strlen((string)$text) > ($this->width - ((int)$this->margin * 2))) ?
+                explode(PHP_EOL, wordwrap($text, ($this->width - ((int)$this->margin * 2)), PHP_EOL)) : [$text];
         } else {
             $lines = [$text];
         }
