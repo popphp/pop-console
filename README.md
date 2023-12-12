@@ -352,6 +352,11 @@ $console->confirm();
 $console->write('The user said yes.');
 ```
 
+```text
+    Are you sure? [Y/N] y
+    The user said yes.
+```
+
 [Top](#pop-console)
 
 Commands
