@@ -112,7 +112,7 @@ class Console
         $height = null;
         $width  = null;
 
-        if (function_exists('exec')) {
+        if (function_exists('exec') && stream_isatty(STDERR)) {
             if (!empty(exec('which stty'))) {
                 [$height, $width] = explode(' ', exec('stty size'), 2);
             } else if (!empty(exec('which tput'))) {
