@@ -36,21 +36,10 @@ class Console
     protected ?int $wrap = null;
 
     /**
-     * Console indent
-     * @var string
+     * Console margin
+     * @var int
      */
-    protected string $indent = '';
-
-    /**
-     * Console padding
-     * @var array
-     */
-    protected array $padding = [
-        'top'    => 0,
-        'right'  => 0,
-        'bottom' => 0,
-        'left'   => 0
-    ];
+    protected int $margin = 0;
 
     /**
      * Console terminal width
@@ -115,18 +104,16 @@ class Console
     /**
      * Instantiate a new console object
      *
-     * @param  ?int    $wrap
-     * @param  string  $indent
-     * @param  ?array  $padding
-     * @throws Exception
+     * @param  int        $wrap
+     * @param  int|string $margin
      */
-    public function __construct(?int $wrap = null, string $indent = '', ?array $padding = null)
+    public function __construct(?int $wrap = 80, int|string $margin = 4)
     {
         $height = null;
         $width  = null;
 
         if (function_exists('exec')) {
-            if (empty(exec('which stty'))) {
+            if (!empty(exec('which stty'))) {
                 [$height, $width] = explode(' ', exec('stty size'), 2);
             } else if (!empty(exec('which tput'))) {
                 $height = exec('tput lines');
@@ -141,9 +128,11 @@ class Console
         if ($wrap !== null) {
             $this->setWrap($wrap);
         }
-        $this->setIndent($indent);
-        if ($padding !== null) {
-            $this->setPadding($padding);
+
+        if (is_string($margin) && str_contains($margin, ' ')) {
+            $this->setIndent($margin);
+        } else if (is_numeric($margin)) {
+            $this->setMargin((int)$margin);
         }
 
         $this->server = (isset($_SERVER)) ? $_SERVER : [];
@@ -158,19 +147,32 @@ class Console
      */
     public function setWrap(int $wrap): Console
     {
-        $this->wrap = (int)$wrap;
+        $this->wrap = $wrap;
         return $this;
     }
 
     /**
-     * Set the indentation of the console object
+     * Set the margin of the console object
      *
-     * @param  ?string $indent
+     * @param  int $margin
      * @return Console
      */
-    public function setIndent(?string $indent = null): Console
+    public function setMargin(int $margin): Console
     {
-        $this->indent = $indent;
+        $this->margin = $margin;
+        return $this;
+    }
+
+    /**
+     * Set the margin of the console object by way of an indentation string
+     * (to maintain backwards compatibility)
+     *
+     * @param  string $indent
+     * @return Console
+     */
+    public function setIndent(string $indent): Console
+    {
+        $this->margin = strlen($indent);
         return $this;
     }
 
@@ -182,7 +184,7 @@ class Console
      */
     public function setWidth(int $width): Console
     {
-        $this->width = (int)$width;
+        $this->width = $width;
         return $this;
     }
 
@@ -194,23 +196,7 @@ class Console
      */
     public function setHeight(int $height): Console
     {
-        $this->height = (int)$height;
-        return $this;
-    }
-
-    /**
-     * Set the terminal padding
-     *
-     * @param  array $padding
-     * @throws Exception
-     * @return Console
-     */
-    public function setPadding(array $padding): Console
-    {
-        if (!isset($padding['top']) || !isset($padding['right']) || !isset($padding['bottom']) || !isset($padding['left'])) {
-            throw new Exception('Error: The padding parameters are set correctly (top, right, bottom and left.)');
-        }
-        $this->padding = $padding;
+        $this->height = $height;
         return $this;
     }
 
@@ -246,7 +232,7 @@ class Console
      */
     public function setHeaderSent(bool $headerSent = true): Console
     {
-        $this->headerSent = (bool)$headerSent;
+        $this->headerSent = $headerSent;
         return $this;
     }
 
@@ -288,13 +274,24 @@ class Console
     }
 
     /**
-     * Get the indentation of the console object
+     * Get the margin of the console object
+     *
+     * @return int
+     */
+    public function getMargin(): int
+    {
+        return $this->margin;
+    }
+
+    /**
+     * Get the indent string based on the margin
+     * (to maintain backwards compatibility)
      *
      * @return string
      */
     public function getIndent(): string
     {
-        return $this->indent;
+        return str_repeat(' ', $this->margin);
     }
 
     /**
@@ -318,14 +315,23 @@ class Console
     }
 
     /**
-     * Get the terminal padding
+     * Has wrap
      *
-     * @param  ?string $key
-     * @return array|int|string
+     * @return bool
      */
-    public function getPadding(?string $key = null): array|int|string
+    public function hasWrap(): bool
     {
-        return (($key !== null) && isset($this->padding[$key])) ? $this->padding[$key] : $this->padding;
+        return !empty($this->wrap);
+    }
+
+    /**
+     * Has margin
+     *
+     * @return bool
+     */
+    public function hasMargin(): bool
+    {
+        return !empty($this->margin);
     }
 
     /**
@@ -346,17 +352,6 @@ class Console
     public function hasHeight(): bool
     {
         return !empty($this->height);
-    }
-
-    /**
-     * Has terminal padding
-     *
-     * @param  string $key
-     * @return bool
-     */
-    public function hasPadding(string $key): bool
-    {
-        return !empty($this->padding[$key]);
     }
 
     /**
@@ -566,6 +561,330 @@ class Console
     }
 
     /**
+     * Print a horizontal line rule out to the console
+     *
+     * @param  string $char
+     * @param  ?int   $size
+     * @param  bool   $newline
+     * @return Console
+     */
+    public function line(string $char = '-', ?int $size = null, bool $newline = true): Console
+    {
+        if ($size === null) {
+            if (!empty($this->wrap)) {
+                $size = $this->wrap;
+            } else if (!empty($this->width)) {
+                $size = $this->width - ($this->margin * 2);
+            }
+        }
+
+        echo $this->getIndent() . str_repeat($char, $size);
+
+        if ($newline) {
+            echo PHP_EOL;
+        }
+
+        return $this;
+    }
+
+    /**
+     * Print a header
+     *
+     * @param  string          $string
+     * @param  string          $char
+     * @param  int|string|null $size
+     * @param  string          $align
+     * @param  bool            $newline
+     * @return Console
+     */
+    public function header(
+        string $string, string $char = '-', int|string|null $size = null, string $align = 'left', bool $newline = true
+    ): Console
+    {
+        if ($size === null) {
+            if (!empty($this->wrap) && (strlen($string) > $this->wrap)) {
+                $size = $this->wrap;
+            } else if (!empty($this->width) && (strlen($string) > $this->width)) {
+                $size = $this->width - ($this->margin * 2);
+            } else {
+                $size = strlen($string);
+            }
+        } else if ($size == 'auto') {
+            if (!empty($this->wrap)) {
+                $size = $this->wrap;
+            } else if (!empty($this->width)) {
+                $size = $this->width - ($this->margin * 2);
+            }
+        }
+
+        if (strlen($string) > $size) {
+            $lines = explode(PHP_EOL, wordwrap($string, $size, PHP_EOL));
+            foreach ($lines as $line) {
+                if (($align != 'left') && (strlen($line) < $size)) {
+                    $line = str_repeat(' ', $this->calculatePad($line, $size, $align)) . $line;
+                }
+                echo $this->getIndent() . $line . PHP_EOL;
+            }
+        } else {
+            if (($align != 'left') && (strlen($string) < $size)) {
+                $string = str_repeat(' ', $this->calculatePad($string, $size, $align)) . $string;
+            }
+            echo $this->getIndent() . $string . PHP_EOL;
+        }
+
+        $this->line($char, $size, $newline);
+        return $this;
+    }
+
+    /**
+     * Print a left header
+     *
+     * @param  string          $string
+     * @param  string          $char
+     * @param  int|string|null $size
+     * @param  bool            $newline
+     * @return Console
+     */
+    public function headerLeft(string $string, string $char = '-', int|string|null $size = 'auto', bool $newline = true): Console
+    {
+        return $this->header($string, $char, $size, 'left', $newline);
+    }
+
+    /**
+     * Print a center header
+     *
+     * @param  string          $string
+     * @param  string          $char
+     * @param  int|string|null $size
+     * @param  bool            $newline
+     * @return Console
+     */
+    public function headerCenter(string $string, string $char = '-', int|string|null $size = 'auto', bool $newline = true): Console
+    {
+        return $this->header($string, $char, $size, 'center', $newline);
+    }
+
+    /**
+     * Print a right header
+     *
+     * @param  string          $string
+     * @param  string          $char
+     * @param  int|string|null $size
+     * @param  bool            $newline
+     * @return Console
+     */
+    public function headerRight(string $string, string $char = '-', int|string|null $size = 'auto', bool $newline = true): Console
+    {
+        return $this->header($string, $char, $size, 'right', $newline);
+    }
+
+    /**
+     * Print an alert box out to the console
+     *
+     * @param  string          $message
+     * @param  int             $fg
+     * @param  int             $bg
+     * @param  int|string|null $size
+     * @param  string          $align
+     * @param  int             $innerPad
+     * @param  bool            $newline
+     * @return Console
+     */
+    public function alert(
+        string $message, int $fg, int $bg, int|string|null $size = null,
+        string $align = 'center', int $innerPad = 4, bool $newline = true
+    ): Console
+    {
+        if ($size === null) {
+            if (!empty($this->wrap) && (strlen($message) > $this->wrap)) {
+                $size = $this->wrap;
+            } else if (!empty($this->width) && (strlen($message) > $this->width)) {
+                $size = $this->width - ($this->margin * 2);
+            } else {
+                $size = strlen($message) + ($innerPad * 2);
+            }
+        } else if ($size == 'auto') {
+            if (!empty($this->wrap)) {
+                $size = $this->wrap;
+            } else if (!empty($this->width)) {
+                $size = $this->width - ($this->margin * 2);
+            }
+        }
+
+        $innerSize    = $size - ($innerPad * 2);
+        $messageLines = [];
+        $lines        = (strlen($message) > $innerSize) ?
+            explode(PHP_EOL, wordwrap($message, $innerSize, PHP_EOL)) : [$message];
+
+        foreach ($lines as $line) {
+            $pad = $this->calculatePad($line, $size, $align);
+            if ($align == 'center') {
+                $messageLines[] = str_repeat(' ', $pad) . $line . str_repeat(' ', ($size - strlen($line) - $pad));
+            } else if ($align == 'left') {
+                $messageLines[] = str_repeat(' ', $innerPad) . $line . str_repeat(' ', ($size - strlen($line) - $pad - $innerPad));
+            } else if ($align == 'right') {
+                $messageLines[] = str_repeat(' ', ($size - strlen($line) - $innerPad)) . $line . str_repeat(' ', $innerPad);
+            }
+        }
+
+        echo PHP_EOL;
+        echo $this->getIndent() . Color::colorize(str_repeat(' ', $size), $fg, $bg) . PHP_EOL;
+        foreach ($messageLines as $messageLine) {
+            echo $this->getIndent() . Color::colorize($messageLine, $fg, $bg) . PHP_EOL;
+        }
+        echo $this->getIndent() . Color::colorize(str_repeat(' ', $size), $fg, $bg) . PHP_EOL;
+        if ($newline) {
+            echo PHP_EOL;
+        }
+
+        return $this;
+    }
+
+    /**
+     * Print a "danger" alert box out to the console
+     *
+     * @param  string          $message
+     * @param  int|string|null $size
+     * @param  string          $align
+     * @param  int             $innerPad
+     * @param  bool            $newline
+     * @return Console
+     */
+    public function alertDanger(
+        string $message, int|string|null $size = null,
+        string $align = 'center', int $innerPad = 4, bool $newline = true
+    ): Console
+    {
+        return $this->alert($message, Color::BRIGHT_BOLD_WHITE, Color::BRIGHT_RED, $size, $align, $innerPad, $newline);
+    }
+
+    /**
+     * Print a "warning" alert box out to the console
+     *
+     * @param  string          $message
+     * @param  int|string|null $size
+     * @param  string          $align
+     * @param  int             $innerPad
+     * @param  bool            $newline
+     * @return Console
+     */
+    public function alertWarning(
+        string $message, int|string|null $size = null,
+        string $align = 'center', int $innerPad = 4, bool $newline = true
+    ): Console
+    {
+        return $this->alert($message, Color::BOLD_BLACK, Color::BRIGHT_YELLOW, $size, $align, $innerPad, $newline);
+    }
+
+    /**
+     * Print a "success" alert box out to the console
+     *
+     * @param  string          $message
+     * @param  int|string|null $size
+     * @param  string          $align
+     * @param  int             $innerPad
+     * @param  bool            $newline
+     * @return Console
+     */
+    public function alertSuccess(
+        string $message, int|string|null $size = null,
+        string $align = 'center', int $innerPad = 4, bool $newline = true
+    ): Console
+    {
+        return $this->alert($message, Color::BOLD_BLACK, Color::GREEN, $size, $align, $innerPad, $newline);
+    }
+
+    /**
+     * Print an "info" alert box out to the console
+     *
+     * @param  string          $message
+     * @param  int|string|null $size
+     * @param  string          $align
+     * @param  int             $innerPad
+     * @param  bool            $newline
+     * @return Console
+     */
+    public function alertInfo(
+        string $message, int|string|null $size = null,
+        string $align = 'center', int $innerPad = 4, bool $newline = true
+    ): Console
+    {
+        return $this->alert($message, Color::BOLD_BLACK, Color::BRIGHT_BLUE, $size, $align, $innerPad, $newline);
+    }
+
+    /**
+     * Print a "primary" alert box out to the console
+     *
+     * @param  string          $message
+     * @param  int|string|null $size
+     * @param  string          $align
+     * @param  int             $innerPad
+     * @param  bool            $newline
+     * @return Console
+     */
+    public function alertPrimary(
+        string $message, int|string|null $size = null,
+        string $align = 'center', int $innerPad = 4, bool $newline = true
+    ): Console
+    {
+        return $this->alert($message, Color::BRIGHT_BOLD_WHITE, Color::BLUE, $size, $align, $innerPad, $newline);
+    }
+
+    /**
+     * Print a "secondary" alert box out to the console
+     *
+     * @param  string          $message
+     * @param  int|string|null $size
+     * @param  string          $align
+     * @param  int             $innerPad
+     * @param  bool            $newline
+     * @return Console
+     */
+    public function alertSecondary(
+        string $message, int|string|null $size = null,
+        string $align = 'center', int $innerPad = 4, bool $newline = true
+    ): Console
+    {
+        return $this->alert($message, Color::BRIGHT_BOLD_WHITE, Color::MAGENTA, $size, $align, $innerPad, $newline);
+    }
+
+    /**
+     * Print a "dark" alert box out to the console
+     *
+     * @param  string          $message
+     * @param  int|string|null $size
+     * @param  string          $align
+     * @param  int             $innerPad
+     * @param  bool            $newline
+     * @return Console
+     */
+    public function alertDark(
+        string $message, int|string|null $size = null,
+        string $align = 'center', int $innerPad = 4, bool $newline = true
+    ): Console
+    {
+        return $this->alert($message, Color::BRIGHT_BOLD_WHITE, Color::BRIGHT_BLACK, $size, $align, $innerPad, $newline);
+    }
+
+    /**
+     * Print a "light" alert box out to the console
+     *
+     * @param  string          $message
+     * @param  int|string|null $size
+     * @param  string          $align
+     * @param  int             $innerPad
+     * @param  bool            $newline
+     * @return Console
+     */
+    public function alertLight(
+        string $message, int|string|null $size = null,
+        string $align = 'center', int $innerPad = 4, bool $newline = true
+    ): Console
+    {
+        return $this->alert($message, Color::BOLD_BLACK, Color::WHITE, $size, $align, $innerPad, $newline);
+    }
+
+    /**
      * Get input from the prompt
      *
      * @param  string $prompt
@@ -581,9 +900,9 @@ class Console
     {
         if (($withHeaders) && ($this->header !== null)) {
             $this->headerSent = true;
-            echo $this->formatTemplate($this->header) . $this->indent . $prompt;
+            echo $this->formatTemplate($this->header) . $this->getIndent() . $prompt;
         } else {
-            echo $this->indent . $prompt;
+            echo $this->getIndent() . $prompt;
         }
 
         $input = null;
@@ -602,7 +921,7 @@ class Console
 
             while (!in_array($input, $options)) {
                 if ($input !== null) {
-                    echo $this->indent . $prompt;
+                    echo $this->getIndent() . $prompt;
                 }
                 $input = $this->getPromptInput($prompt, $length, $caseSensitive);
             }
@@ -642,247 +961,27 @@ class Console
     }
 
     /**
-     * Print a horizontal line rule out to the console
-     *
-     * @param  string $char
-     * @param  ?int   $size
-     * @param  bool   $newline
-     * @return Console
-     */
-    public function line(string $char = '-', ?int $size = null, bool $newline = true): Console
-    {
-        $indent = null;
-
-        if ($size === null) {
-            if (!empty($this->width)) {
-                $size = $this->width;
-            } else {
-                $size = $this->wrap;
-            }
-        }
-
-        if (($this->hasPadding('left')) && ($this->hasPadding('right'))) {
-            $indent = $this->getPadding('left');
-            $size   = $size - (int)$this->getPadding('left') - (int)$this->getPadding('right');
-        } else if (!empty($this->indent)) {
-            $indent = strlen($this->indent);
-            $size   = $size - $indent;
-        }
-
-        echo (!empty($indent) ? str_repeat(' ', $indent) : '') . str_repeat($char, $size);
-
-        if ($newline) {
-            echo PHP_EOL;
-        }
-
-        return $this;
-    }
-
-    /**
-     * Print a header
-     *
-     * @param  string          $string
-     * @param  string          $char
-     * @param  int|string|null $size
-     * @param  string          $align
-     * @param  bool            $newline
-     * @return Console
-     */
-    public function header(string $string, string $char = '-', int|string|null $size = 'auto', string $align = 'left', bool $newline = true): Console
-    {
-        $indent = null;
-
-        if ($size == 'auto') {
-            $size = strlen($string);
-        } else if (empty($size)) {
-            if (!empty($this->width)) {
-                $size = $this->width;
-            } else {
-                $size = $this->wrap;
-            }
-        }
-
-        if (($this->hasPadding('left')) && ($this->hasPadding('right'))) {
-            if ($this->hasPadding('top')) {
-                $top = (int)$this->getPadding('top');
-                for ($i = 0; $i < $top; $i++) {
-                    echo PHP_EOL;
-                }
-            }
-            $indent = (int)$this->getPadding('left');
-            if ($size != strlen($string)) {
-                $size = $size - (int)$this->getPadding('left') - (int)$this->getPadding('right');
-                if ($align == 'center') {
-                    $string = str_repeat(' ', round(($size - strlen($string)) / 2)) . $string;
-                } else if ($align == 'right') {
-                    $string = str_repeat(' ', ($size - strlen($string))) . $string;
-                }
-            }
-        } else if (!empty($this->indent)) {
-            $indent = strlen($this->indent);
-        }
-
-        echo (!empty($indent) ? str_repeat(' ', $indent) : '') . $string . PHP_EOL;
-        echo (!empty($indent) ? str_repeat(' ', $indent) : '') . str_repeat($char, $size);
-
-        if ($this->hasPadding('bottom')) {
-            $bottom = (int)$this->getPadding('bottom');
-            for ($i = 0; $i < $bottom; $i++) {
-                echo PHP_EOL;
-            }
-        }
-
-        if ($newline) {
-            echo PHP_EOL;
-        }
-
-        return $this;
-    }
-
-    /**
-     * Print a center header
-     *
-     * @param  string $string
-     * @param  string $char
-     * @param  bool   $newline
-     * @return Console
-     */
-    public function headerLeft(string $string, string $char = '-', bool $newline = true): Console
-    {
-        return $this->header($string, $char, null, 'left', $newline);
-    }
-
-    /**
-     * Print a center header
-     *
-     * @param  string $string
-     * @param  string $char
-     * @param  bool   $newline
-     * @return Console
-     */
-    public function headerCenter(string $string, string $char = '-', bool $newline = true): Console
-    {
-        return $this->header($string, $char, null, 'center', $newline);
-    }
-
-    /**
-     * Print a center header
-     *
-     * @param  string $string
-     * @param  string $char
-     * @param  bool   $newline
-     * @return Console
-     */
-    public function headerRight(string $string, string $char = '-', bool $newline = true): Console
-    {
-        return $this->header($string, $char, null, 'right', $newline);
-    }
-    /**
-     * Print an alert box out to the console
-     *
-     * @param  string          $message
-     * @param  int             $fg
-     * @param  int             $bg
-     * @param  int|string|null $size
-     * @param  string          $align
-     * @param  bool            $newline
-     * @return Console
-     */
-    public function alert(string $message, int $fg, int $bg, int|string|null $size = 'auto', string $align = 'left', bool $newline = true): Console
-    {
-        $indent    = null;
-        $alertSize = 0;
-
-        if ($size == 'auto') {
-            $size   = strlen($message);
-            $indent = strlen($this->indent);
-            $alertSize = strlen($message);
-            if (!empty($this->indent)) {
-                $alertSize += (strlen($this->indent) * 2);
-            }
-        } else if (is_numeric($size)) {
-            $indent    = strlen($this->indent);
-            $alertSize = $size;
-            if (!empty($this->indent)) {
-                $alertSize += (strlen($this->indent) * 2);
-            }
-        } else if (empty($size)) {
-            if (!empty($this->width)) {
-                $size = $this->width;
-            } else {
-                $size = $this->wrap;
-            }
-        }
-
-        if (($this->hasPadding('left')) && ($this->hasPadding('right'))) {
-            $indent    = (int)$this->getPadding('left');
-            $right     = (int)$this->getPadding('right');
-            $alertSize = $size - $indent - $right;
-
-            if ($this->hasPadding('top')) {
-                $top = (int)$this->getPadding('top');
-                for ($i = 0; $i < $top; $i++) {
-                    echo PHP_EOL;
-                }
-            }
-        }
-
-        //if ($size != strlen($message)) {
-            if ($align == 'center') {
-                $message = str_repeat(' ', round(($size - strlen($message)) / 2)) . $message;
-            } else if ($align == 'right') {
-                $message = str_repeat(' ', ($size - strlen($message))) . $message;
-            } else {
-                $message = str_repeat(' ', $indent) . $message;// . str_repeat(' ', ($alertSize - $indent - strlen($message)));
-            }
-        //}
-
-
-        if (!empty($alertSize)) {
-            echo (!empty($indent) ? str_repeat(' ', $indent) : '') . Color::colorize(str_repeat(' ', $alertSize), $fg, $bg);
-            echo PHP_EOL;
-        }
-        echo (!empty($indent) ? str_repeat(' ', $indent) : '');
-        echo Color::colorize($message, $fg, $bg);
-        echo PHP_EOL;
-
-        if (!empty($alertSize)) {
-            echo (!empty($indent) ? str_repeat(' ', $indent) : '') . Color::colorize(str_repeat(' ', $alertSize), $fg, $bg);
-            echo PHP_EOL;
-        }
-        if ($this->hasPadding('bottom')) {
-            $bottom = (int)$this->getPadding('bottom');
-            for ($i = 0; $i < $bottom; $i++) {
-                echo PHP_EOL;
-            }
-        }
-
-        if ($newline) {
-            echo PHP_EOL;
-        }
-
-        return $this;
-    }
-
-    /**
      * Append a string of text to the response body
      *
      * @param  ?string $text
      * @param  bool    $newline
-     * @param  bool    $indent
+     * @param  bool    $margin
      * @return Console
      */
-    public function append(?string $text = null, bool $newline = true, bool $indent = true): Console
+    public function append(?string $text = null, bool $newline = true, bool $margin = true): Console
     {
-        if ($this->wrap != 0) {
+        if (!empty($this->wrap)) {
             $lines = (strlen((string)$text) > $this->wrap) ?
                 explode(PHP_EOL, wordwrap($text, $this->wrap, PHP_EOL)) : [$text];
+        } else if (!empty($this->width)) {
+            $lines = (strlen((string)$text) > ($this->width - ($this->margin * 2))) ?
+                explode(PHP_EOL, wordwrap($text, ($this->width - ($this->margin * 2)), PHP_EOL)) : [$text];
         } else {
             $lines = [$text];
         }
 
         foreach ($lines as $line) {
-            $this->response .= (($indent) ? $this->indent : '') . $line . (($newline) ? PHP_EOL : null);
+            $this->response .= (($margin) ? $this->getIndent() : '') . $line . (($newline) ? PHP_EOL : null);
         }
 
         return $this;
@@ -893,13 +992,13 @@ class Console
      *
      * @param  ?string $text
      * @param  bool    $newline
-     * @param  bool    $indent
+     * @param  bool    $margin
      * @param  bool    $withHeaders
      * @return Console
      */
-    public function write(?string $text = null, bool $newline = true, bool $indent = true, bool $withHeaders = true): Console
+    public function write(?string $text = null, bool $newline = true, bool $margin = true, bool $withHeaders = true): Console
     {
-        $this->append($text, $newline, $indent);
+        $this->append($text, $newline, $margin);
         $this->send($withHeaders);
         return $this;
     }
@@ -984,7 +1083,7 @@ class Console
                 }
             }
 
-            $commands[$key]       = $this->indent . $name;
+            $commands[$key]       = $this->getIndent() . $name;
             $commandLengths[$key] = $length;
         }
 
@@ -1008,7 +1107,7 @@ class Console
                     foreach ($lines as $i => $line) {
                         $this->response .= ($i == 0) ?
                             $command . $pad . $line . PHP_EOL :
-                            $this->indent . str_repeat(' ', strlen((string)$this->commands[$key])) . $pad . $line . PHP_EOL;
+                            $this->getIndent() . str_repeat(' ', strlen((string)$this->commands[$key])) . $pad . $line . PHP_EOL;
                     }
 
                     if ($i < count($commands) - 1) {
@@ -1056,10 +1155,10 @@ class Console
             $templateLines = explode("\n", $template);
             foreach ($templateLines as $line) {
                 $line    = trim($line);
-                $format .= $this->indent . $line . PHP_EOL;
+                $format .= $this->getIndent() . $line . PHP_EOL;
             }
         } else {
-            $format = $this->indent . $template . PHP_EOL;
+            $format = $this->getIndent() . $template . PHP_EOL;
         }
 
         return $format;
@@ -1086,6 +1185,27 @@ class Console
         }
 
         return $input;
+    }
+
+    /**
+     * Calculate string pad
+     *
+     * @param  string $string
+     * @param  int    $size
+     * @param  string $align
+     * @return int
+     */
+    protected function calculatePad(string $string, int $size, string $align = 'center'): int
+    {
+        $pad = 0;
+
+        if ($align == 'center') {
+            $pad = round(($size - strlen($string)) / 2);
+        } else if ($align == 'right') {
+            $pad = $size - strlen($string);
+        }
+
+        return $pad;
     }
 
 }

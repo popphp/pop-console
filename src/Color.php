@@ -152,7 +152,7 @@ class Color
      * @param  ?int $color
      * @return mixed
      */
-    protected static function getFgColorCode(?int $color = null): mixed
+    public static function getFgColorCode(?int $color = null): mixed
     {
         if (($color !== null) && isset(static::$fgColorMap[$color])) {
             return "\x1b[" . static::$fgColorMap[$color] . "m";
@@ -166,7 +166,7 @@ class Color
      * @param  ?int $color
      * @return mixed
      */
-    protected static function getBgColorCode(int $color = null): mixed
+    public static function getBgColorCode(int $color = null): mixed
     {
         if (($color !== null) && isset(static::$bgColorMap[$color])) {
             return "\x1b[" . static::$bgColorMap[$color] . "m";

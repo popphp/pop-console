@@ -5,6 +5,7 @@ namespace Pop\Console\Test;
 use Pop\Application;
 use Pop\Console\Console;
 use Pop\Console\Command;
+use Pop\Console\Color;
 use PHPUnit\Framework\TestCase;
 
 class ConsoleTest extends TestCase
@@ -14,8 +15,15 @@ class ConsoleTest extends TestCase
     {
         $console = new Console(100, '    ');
         $this->assertInstanceOf('Pop\Console\Console', $console);
-        $this->assertEquals(100, $console->getWidth());
+        $this->assertEquals(100, $console->getWrap());
         $this->assertEquals('    ', $console->getIndent());
+        $this->assertEquals(4, $console->getMargin());
+        $this->assertTrue($console->hasMargin());
+        $this->assertTrue($console->hasWidth());
+        $this->assertTrue($console->hasHeight());
+        $this->assertTrue($console->hasWrap());
+        $this->assertGreaterThan(0, $console->getWidth());
+        $this->assertGreaterThan(0, $console->getHeight());
     }
 
     public function testSetAndGetHeader()
@@ -43,17 +51,17 @@ class ConsoleTest extends TestCase
     {
         $console = new Console();
         $colors = $console->getAvailableColors();
-        $this->assertEquals(17, count($colors));
+        $this->assertEquals(33, count($colors));
         $this->assertTrue(isset($colors['MAGENTA']));
         $this->assertEquals(6, $colors['MAGENTA']);
         $this->assertTrue(isset($colors['BOLD_WHITE']));
-        $this->assertEquals(16, $colors['BOLD_WHITE']);
+        $this->assertEquals(24, $colors['BOLD_WHITE']);
     }
 
     public function testSetAndGetHelpColors()
     {
         $console = new Console();
-        $console->setHelpColors(Console::RED, Console::WHITE, Console::BLUE, Console::MAGENTA);
+        $console->setHelpColors(Color::RED, Color::WHITE, Color::BLUE, Color::MAGENTA);
         $this->assertEquals(4, count($console->getHelpColors()));
     }
 
@@ -137,7 +145,7 @@ class ConsoleTest extends TestCase
     public function testDisplayHelp()
     {
         $command = new Command('hello', '-v', 'This is the help');
-        $console = new Console();
+        $console = new Console(80, '    ');
         $console->addCommand($command);
 
         ob_start();
@@ -156,7 +164,7 @@ class ConsoleTest extends TestCase
         $userShow   = new Command('user show', '-v --option=123 [<id>]', 'This is the users list command.');
 
         $console = new Console(80, '    ');
-        $console->setHelpColors(Console::BOLD_BLUE, Console::YELLOW, Console::BOLD_MAGENTA);
+        $console->setHelpColors(Color::BOLD_BLUE, Color::YELLOW, Color::BOLD_MAGENTA);
 
         $console->setHeader(
             <<<HEADER
@@ -185,20 +193,283 @@ HEADER
         $this->assertStringContainsString('user', $result);
     }
 
-    public function testColor()
+    public function testLine1()
     {
-        $console = new Console();
-        $string = $console->colorize('Hello World', Console::BOLD_BLUE, Console::RED);
-        $this->assertStringContainsString('[1;34m', $string);
-        $this->assertStringContainsString('[41m', $string);
-        $this->assertStringContainsString('[0m', $string);
+        $console = new Console(10);
+
+        ob_start();
+        $console->line();
+        $result = ob_get_clean();
+
+        $this->assertEquals('    ----------' . PHP_EOL, $result);
     }
 
-    public function testBadColor()
+    public function testLine2()
+    {
+        $console = new Console(null, 0);
+
+        ob_start();
+        $console->line();
+        $result = ob_get_clean();
+
+        $this->assertEquals(str_repeat('-', $console->getWidth()) . PHP_EOL, $result);
+    }
+
+    public function testHeader1()
     {
         $console = new Console();
-        $string = $console->colorize('Hello World', 400, 500);
-        $this->assertStringContainsString('Hello World', $string);
+
+        ob_start();
+        $console->header('Hello World');
+        $result = ob_get_clean();
+
+        $this->assertEquals('    Hello World' . PHP_EOL . '    -----------' . PHP_EOL, $result);
+    }
+
+    public function testHeader2()
+    {
+        $console = new Console(20);
+
+        ob_start();
+        $console->header('Hello World', '-', 'auto');
+        $result = ob_get_clean();
+
+        $this->assertEquals('    Hello World' . PHP_EOL . '    --------------------' . PHP_EOL, $result);
+    }
+
+    public function testHeader3()
+    {
+        $console = new Console(20);
+
+        ob_start();
+        $console->header('Hello World', '-', 'auto', 'right');
+        $result = ob_get_clean();
+
+        $this->assertEquals('             Hello World' . PHP_EOL . '    --------------------' . PHP_EOL, $result);
+    }
+
+    public function testHeader4()
+    {
+        $console = new Console(null, 0);
+
+        ob_start();
+        $console->header('Hello World', '-', 'auto');
+        $result = ob_get_clean();
+
+        $this->assertEquals('Hello World' . PHP_EOL . str_repeat('-', $console->getWidth()) . PHP_EOL, $result);
+    }
+
+    public function testHeader5()
+    {
+        $console = new Console(10);
+
+        ob_start();
+        $console->header('Hello World', '-', null, 'right');
+        $result = ob_get_clean();
+
+        $this->assertEquals('         Hello' . PHP_EOL . '         World' . PHP_EOL . '    ----------' . PHP_EOL, $result);
+    }
+
+    public function testHeader6()
+    {
+        $console = new Console(null, 0);
+
+        ob_start();
+        $console->header('Hello World. This is a long string of text. This is a long string of text. This is a long string of text. This is a long string of text. This is a long string of text. This is a long string of text.', '-', null, 'center');
+        $result = ob_get_clean();
+
+        $this->assertStringContainsString('This is a long string of text', $result);
+    }
+
+    public function testHeaderLeft()
+    {
+        $console = new Console(20);
+
+        ob_start();
+        $console->headerLeft('Hello World');
+        $result = ob_get_clean();
+
+        $this->assertEquals('    Hello World' . PHP_EOL . '    --------------------' . PHP_EOL, $result);
+    }
+
+    public function testHeaderRight()
+    {
+        $console = new Console(20);
+
+        ob_start();
+        $console->headerRight('Hello World');
+        $result = ob_get_clean();
+
+        $this->assertEquals('             Hello World' . PHP_EOL . '    --------------------' . PHP_EOL, $result);
+    }
+
+    public function testHeaderCenter()
+    {
+        $console = new Console(20);
+
+        ob_start();
+        $console->headerCenter('Hello World');
+        $result = ob_get_clean();
+
+        $this->assertEquals('         Hello World' . PHP_EOL . '    --------------------' . PHP_EOL, $result);
+    }
+
+    public function testAlert1()
+    {
+        $console = new Console(20);
+
+        ob_start();
+        $console->alertDanger('Hello World. This is a longer alert.');
+        $result = ob_get_clean();
+
+        $this->assertTrue(str_contains($result, "\x1b[1;97m\x1b[101m    Hello World.    \x1b[0m"));
+    }
+
+    public function testAlert2()
+    {
+        $console = new Console(null);
+
+        ob_start();
+        $console->alertDanger('Hello World. This is a longer alert. This is a longer alert. This is a longer alert. This is a longer alert. This is a longer alert. This is a longer alert. This is a longer alert. This is a longer alert. This is a longer alert. This is a longer alert.');
+        $result = ob_get_clean();
+
+        $this->assertTrue(str_contains($result, "\x1b[1;97m\x1b[101m"));
+        $this->assertTrue(str_contains($result, "Hello World. This is a longer alert."));
+    }
+
+    public function testAlert3()
+    {
+        $console = new Console(20);
+
+        ob_start();
+        $console->alertDanger('Hello World.', 'auto');
+        $result = ob_get_clean();
+
+        $this->assertTrue(str_contains($result, "\x1b[1;97m\x1b[101m    Hello World.    \x1b[0m"));
+    }
+
+    public function testAlert4()
+    {
+        $console = new Console(null);
+
+        ob_start();
+        $console->alertDanger('Hello World.', 'auto');
+        $result = ob_get_clean();
+
+        $this->assertTrue(str_contains($result, "\x1b[1;97m\x1b[101m"));
+        $this->assertTrue(str_contains($result, "Hello World."));
+    }
+
+    public function testAlert5()
+    {
+        $console = new Console(null);
+
+        ob_start();
+        $console->alertDanger('Hello World.', 'auto', 'left');
+        $result = ob_get_clean();
+
+        $this->assertTrue(str_contains($result, "\x1b[1;97m\x1b[101m"));
+        $this->assertTrue(str_contains($result, "Hello World."));
+    }
+
+    public function testAlert6()
+    {
+        $console = new Console(null);
+
+        ob_start();
+        $console->alertDanger('Hello World.', 'auto', 'right');
+        $result = ob_get_clean();
+
+        $this->assertTrue(str_contains($result, "\x1b[1;97m\x1b[101m"));
+        $this->assertTrue(str_contains($result, "Hello World."));
+    }
+
+    public function testAlertDanger()
+    {
+        $console = new Console(20);
+
+        ob_start();
+        $console->alertDanger('Hello World');
+        $result = ob_get_clean();
+
+        $this->assertTrue(str_contains($result, "\x1b[1;97m\x1b[101m    Hello World    \x1b[0m"));
+    }
+
+    public function testAlertWarning()
+    {
+        $console = new Console(20);
+
+        ob_start();
+        $console->alertWarning('Hello World');
+        $result = ob_get_clean();
+
+        $this->assertTrue(str_contains($result, "\x1b[1;30m\x1b[103m    Hello World    \x1b[0m"));
+    }
+
+    public function testAlertSuccess()
+    {
+        $console = new Console(20);
+
+        ob_start();
+        $console->alertSuccess('Hello World');
+        $result = ob_get_clean();
+
+        $this->assertTrue(str_contains($result, "\x1b[1;30m\x1b[42m    Hello World    \x1b[0m"));
+    }
+
+    public function testAlertInfo()
+    {
+        $console = new Console(20);
+
+        ob_start();
+        $console->alertInfo('Hello World');
+        $result = ob_get_clean();
+
+        $this->assertTrue(str_contains($result, "\x1b[1;30m\x1b[104m    Hello World    \x1b[0m"));
+    }
+
+    public function testAlertPrimary()
+    {
+        $console = new Console(20);
+
+        ob_start();
+        $console->alertPrimary('Hello World');
+        $result = ob_get_clean();
+
+        $this->assertTrue(str_contains($result, "\x1b[1;97m\x1b[44m    Hello World    \x1b[0m"));
+    }
+
+    public function testAlertSecondary()
+    {
+        $console = new Console(20);
+
+        ob_start();
+        $console->alertSecondary('Hello World');
+        $result = ob_get_clean();
+
+        $this->assertTrue(str_contains($result, "\x1b[1;97m\x1b[45m    Hello World    \x1b[0m"));
+    }
+
+    public function testAlertDark()
+    {
+        $console = new Console(20);
+
+        ob_start();
+        $console->alertDark('Hello World');
+        $result = ob_get_clean();
+
+        $this->assertTrue(str_contains($result, "\x1b[1;97m\x1b[100m    Hello World    \x1b[0m"));
+    }
+
+    public function testAlertLight()
+    {
+        $console = new Console(20);
+
+        ob_start();
+        $console->alertLight('Hello World');
+        $result = ob_get_clean();
+
+        $this->assertTrue(str_contains($result, "\x1b[1;30m\x1b[47m    Hello World    \x1b[0m"));
     }
 
     public function testAppend()
@@ -295,6 +566,18 @@ HEADER
 
         $this->assertEquals('n', $answer);
         $this->assertTrue(str_contains($result, '    Test prompt: '));
+    }
+
+    public function testConfirmYes()
+    {
+        $_SERVER['X_POP_CONSOLE_INPUT'] = 'y';
+
+        ob_start();
+        $console = new Console();
+        $answer  = $console->confirm();
+        $result = ob_get_clean();
+
+        $this->assertEquals('y', $answer);
     }
 
 }
