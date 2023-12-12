@@ -594,10 +594,13 @@ class Console
      * @param  string $char
      * @param  ?int   $size
      * @param  bool   $newline
-     * @return Console
+     * @param  bool   $return
+     * @return Console|string
      */
-    public function line(string $char = '-', ?int $size = null, bool $newline = true): Console
+    public function line(string $char = '-', ?int $size = null, bool $newline = true, bool $return = false): Console|string
     {
+        $line = '';
+
         if ($size === null) {
             if (!empty($this->wrap)) {
                 $size = $this->wrap;
@@ -606,13 +609,18 @@ class Console
             }
         }
 
-        echo $this->getIndent() . str_repeat($char, $size);
+        $line .= $this->getIndent() . str_repeat($char, $size);
 
         if ($newline) {
-            echo PHP_EOL;
+            $line .= PHP_EOL;
         }
 
-        return $this;
+        if ($return) {
+            return $line;
+        } else {
+            echo $line;
+            return $this;
+        }
     }
 
     /**
@@ -623,12 +631,16 @@ class Console
      * @param  int|string|null $size
      * @param  string          $align
      * @param  bool            $newline
-     * @return Console
+     * @param  bool            $return
+     * @return Console|string
      */
     public function header(
-        string $string, string $char = '-', int|string|null $size = null, string $align = 'left', bool $newline = true
-    ): Console
+        string $string, string $char = '-', int|string|null $size = null,
+        string $align = 'left', bool $newline = true, bool $return = false
+    ): Console|string
     {
+        $header = '';
+
         if ($size === null) {
             if (!empty($this->wrap) && (strlen($string) > $this->wrap)) {
                 $size = $this->wrap;
@@ -651,17 +663,23 @@ class Console
                 if (($align != 'left') && (strlen($line) < $size)) {
                     $line = str_repeat(' ', $this->calculatePad($line, $size, $align)) . $line;
                 }
-                echo $this->getIndent() . $line . PHP_EOL;
+                $header .= $this->getIndent() . $line . PHP_EOL;
             }
         } else {
             if (($align != 'left') && (strlen($string) < $size)) {
                 $string = str_repeat(' ', $this->calculatePad($string, $size, $align)) . $string;
             }
-            echo $this->getIndent() . $string . PHP_EOL;
+            $header = $this->getIndent() . $string . PHP_EOL;
         }
 
-        $this->line($char, $size, $newline);
-        return $this;
+        if ($return) {
+            $header .= $this->line($char, $size, $newline, $return);
+            return $header;
+        } else {
+            echo $header;
+            $this->line($char, $size, $newline, $return);
+            return $this;
+        }
     }
 
     /**
@@ -671,11 +689,14 @@ class Console
      * @param  string          $char
      * @param  int|string|null $size
      * @param  bool            $newline
-     * @return Console
+     * @param  bool            $return
+     * @return Console|string
      */
-    public function headerLeft(string $string, string $char = '-', int|string|null $size = 'auto', bool $newline = true): Console
+    public function headerLeft(
+        string $string, string $char = '-', int|string|null $size = 'auto', bool $newline = true, bool $return = false
+    ): Console|string
     {
-        return $this->header($string, $char, $size, 'left', $newline);
+        return $this->header($string, $char, $size, 'left', $newline, $return);
     }
 
     /**
@@ -685,11 +706,14 @@ class Console
      * @param  string          $char
      * @param  int|string|null $size
      * @param  bool            $newline
-     * @return Console
+     * @param  bool            $return
+     * @return Console|string
      */
-    public function headerCenter(string $string, string $char = '-', int|string|null $size = 'auto', bool $newline = true): Console
+    public function headerCenter(
+        string $string, string $char = '-', int|string|null $size = 'auto', bool $newline = true, bool $return = false
+    ): Console|string
     {
-        return $this->header($string, $char, $size, 'center', $newline);
+        return $this->header($string, $char, $size, 'center', $newline, $return);
     }
 
     /**
@@ -699,11 +723,14 @@ class Console
      * @param  string          $char
      * @param  int|string|null $size
      * @param  bool            $newline
-     * @return Console
+     * @param  bool            $return
+     * @return Console|string
      */
-    public function headerRight(string $string, string $char = '-', int|string|null $size = 'auto', bool $newline = true): Console
+    public function headerRight(
+        string $string, string $char = '-', int|string|null $size = 'auto', bool $newline = true, bool $return = false
+    ): Console|string
     {
-        return $this->header($string, $char, $size, 'right', $newline);
+        return $this->header($string, $char, $size, 'right', $newline, $return);
     }
 
     /**
@@ -716,12 +743,13 @@ class Console
      * @param  string          $align
      * @param  int             $innerPad
      * @param  bool            $newline
-     * @return Console
+     * @param  bool            $return
+     * @return Console|string
      */
     public function alert(
-        string $message, int $fg, int $bg, int|string|null $size = null,
-        string $align = 'center', int $innerPad = 4, bool $newline = true
-    ): Console
+        string $message, int $fg, int $bg, int|string|null $size = null, string $align = 'center',
+        int $innerPad = 4, bool $newline = true, bool $return = false
+    ): Console|string
     {
         if ($size === null) {
             if (!empty($this->wrap) && (strlen($message) > $this->wrap)) {
@@ -755,17 +783,22 @@ class Console
             }
         }
 
-        echo PHP_EOL;
-        echo $this->getIndent() . Color::colorize(str_repeat(' ', $size), $fg, $bg) . PHP_EOL;
+        $alert  = PHP_EOL;
+        $alert .= $this->getIndent() . Color::colorize(str_repeat(' ', $size), $fg, $bg) . PHP_EOL;
         foreach ($messageLines as $messageLine) {
-            echo $this->getIndent() . Color::colorize($messageLine, $fg, $bg) . PHP_EOL;
+            $alert .= $this->getIndent() . Color::colorize($messageLine, $fg, $bg) . PHP_EOL;
         }
-        echo $this->getIndent() . Color::colorize(str_repeat(' ', $size), $fg, $bg) . PHP_EOL;
+        $alert .= $this->getIndent() . Color::colorize(str_repeat(' ', $size), $fg, $bg) . PHP_EOL;
         if ($newline) {
-            echo PHP_EOL;
+            $alert .= PHP_EOL;
         }
 
-        return $this;
+        if ($return) {
+            return $alert;
+        } else {
+            echo $alert;
+            return $this;
+        }
     }
 
     /**
@@ -778,12 +811,13 @@ class Console
      * @param  string          $align
      * @param  int             $innerPad
      * @param  bool            $newline
-     * @return Console
+     * @param  bool            $return
+     * @return Console|string
      */
     public function alertBox(
         string $message, string $h = '-', ?string $v = '|', int|string|null $size = null,
-        string $align = 'center', int $innerPad = 4, bool $newline = true
-    ): Console
+        string $align = 'center', int $innerPad = 4, bool $newline = true, bool $return = false
+    ): Console|string
     {
         if ($size === null) {
             if (!empty($this->wrap) && (strlen($message) > $this->wrap)) {
@@ -817,22 +851,27 @@ class Console
             }
         }
 
-        echo PHP_EOL;
-        echo $this->getIndent() . str_repeat($h, $size) . PHP_EOL;
-        echo $this->getIndent() . $v . str_repeat(' ', $size - 2) . $v . PHP_EOL;
+        $alert  = PHP_EOL;
+        $alert .= $this->getIndent() . str_repeat($h, $size) . PHP_EOL;
+        $alert .= $this->getIndent() . $v . str_repeat(' ', $size - 2) . $v . PHP_EOL;
         foreach ($messageLines as $messageLine) {
             if (!empty($v) && str_starts_with($messageLine, ' ') && str_ends_with($messageLine, ' ')) {
                 $messageLine = $v . substr($messageLine, 1, -1) . $v;
             }
-            echo $this->getIndent() . $messageLine . PHP_EOL;
+            $alert .= $this->getIndent() . $messageLine . PHP_EOL;
         }
-        echo $this->getIndent() . $v . str_repeat(' ', $size - 2) . $v . PHP_EOL;
-        echo $this->getIndent() . str_repeat($h, $size) . PHP_EOL;
+        $alert .= $this->getIndent() . $v . str_repeat(' ', $size - 2) . $v . PHP_EOL;
+        $alert .= $this->getIndent() . str_repeat($h, $size) . PHP_EOL;
         if ($newline) {
-            echo PHP_EOL;
+            $alert .= PHP_EOL;
         }
 
-        return $this;
+        if ($return) {
+            return $alert;
+        } else {
+            echo $alert;
+            return $this;
+        }
     }
 
     /**
@@ -843,14 +882,15 @@ class Console
      * @param  string          $align
      * @param  int             $innerPad
      * @param  bool            $newline
-     * @return Console
+     * @param  bool            $return
+     * @return Console|string
      */
     public function alertDanger(
-        string $message, int|string|null $size = null,
-        string $align = 'center', int $innerPad = 4, bool $newline = true
-    ): Console
+        string $message, int|string|null $size = null, string $align = 'center',
+        int $innerPad = 4, bool $newline = true, bool $return = false
+    ): Console|string
     {
-        return $this->alert($message, Color::BRIGHT_BOLD_WHITE, Color::BRIGHT_RED, $size, $align, $innerPad, $newline);
+        return $this->alert($message, Color::BRIGHT_BOLD_WHITE, Color::BRIGHT_RED, $size, $align, $innerPad, $newline, $return);
     }
 
     /**
@@ -861,14 +901,15 @@ class Console
      * @param  string          $align
      * @param  int             $innerPad
      * @param  bool            $newline
-     * @return Console
+     * @param  bool            $return
+     * @return Console|string
      */
     public function alertWarning(
-        string $message, int|string|null $size = null,
-        string $align = 'center', int $innerPad = 4, bool $newline = true
-    ): Console
+        string $message, int|string|null $size = null, string $align = 'center',
+        int $innerPad = 4, bool $newline = true, bool $return = false
+    ): Console|string
     {
-        return $this->alert($message, Color::BOLD_BLACK, Color::BRIGHT_YELLOW, $size, $align, $innerPad, $newline);
+        return $this->alert($message, Color::BOLD_BLACK, Color::BRIGHT_YELLOW, $size, $align, $innerPad, $newline, $return);
     }
 
     /**
@@ -879,14 +920,15 @@ class Console
      * @param  string          $align
      * @param  int             $innerPad
      * @param  bool            $newline
-     * @return Console
+     * @param  bool            $return
+     * @return Console|string
      */
     public function alertSuccess(
-        string $message, int|string|null $size = null,
-        string $align = 'center', int $innerPad = 4, bool $newline = true
-    ): Console
+        string $message, int|string|null $size = null, string $align = 'center',
+        int $innerPad = 4, bool $newline = true, bool $return = false
+    ): Console|string
     {
-        return $this->alert($message, Color::BOLD_BLACK, Color::GREEN, $size, $align, $innerPad, $newline);
+        return $this->alert($message, Color::BOLD_BLACK, Color::GREEN, $size, $align, $innerPad, $newline, $return);
     }
 
     /**
@@ -897,14 +939,15 @@ class Console
      * @param  string          $align
      * @param  int             $innerPad
      * @param  bool            $newline
-     * @return Console
+     * @param  bool            $return
+     * @return Console|string
      */
     public function alertInfo(
-        string $message, int|string|null $size = null,
-        string $align = 'center', int $innerPad = 4, bool $newline = true
-    ): Console
+        string $message, int|string|null $size = null, string $align = 'center',
+        int $innerPad = 4, bool $newline = true, bool $return = false
+    ): Console|string
     {
-        return $this->alert($message, Color::BOLD_BLACK, Color::BRIGHT_BLUE, $size, $align, $innerPad, $newline);
+        return $this->alert($message, Color::BOLD_BLACK, Color::BRIGHT_BLUE, $size, $align, $innerPad, $newline, $return);
     }
 
     /**
@@ -915,14 +958,15 @@ class Console
      * @param  string          $align
      * @param  int             $innerPad
      * @param  bool            $newline
-     * @return Console
+     * @param  bool            $return
+     * @return Console|string
      */
     public function alertPrimary(
-        string $message, int|string|null $size = null,
-        string $align = 'center', int $innerPad = 4, bool $newline = true
-    ): Console
+        string $message, int|string|null $size = null, string $align = 'center',
+        int $innerPad = 4, bool $newline = true, bool $return = false
+    ): Console|string
     {
-        return $this->alert($message, Color::BRIGHT_BOLD_WHITE, Color::BLUE, $size, $align, $innerPad, $newline);
+        return $this->alert($message, Color::BRIGHT_BOLD_WHITE, Color::BLUE, $size, $align, $innerPad, $newline, $return);
     }
 
     /**
@@ -933,14 +977,15 @@ class Console
      * @param  string          $align
      * @param  int             $innerPad
      * @param  bool            $newline
-     * @return Console
+     * @param  bool            $return
+     * @return Console|string
      */
     public function alertSecondary(
-        string $message, int|string|null $size = null,
-        string $align = 'center', int $innerPad = 4, bool $newline = true
-    ): Console
+        string $message, int|string|null $size = null, string $align = 'center',
+        int $innerPad = 4, bool $newline = true, bool $return = false
+    ): Console|string
     {
-        return $this->alert($message, Color::BRIGHT_BOLD_WHITE, Color::MAGENTA, $size, $align, $innerPad, $newline);
+        return $this->alert($message, Color::BRIGHT_BOLD_WHITE, Color::MAGENTA, $size, $align, $innerPad, $newline, $return);
     }
 
     /**
@@ -951,14 +996,15 @@ class Console
      * @param  string          $align
      * @param  int             $innerPad
      * @param  bool            $newline
-     * @return Console
+     * @param  bool            $return
+     * @return Console|string
      */
     public function alertDark(
-        string $message, int|string|null $size = null,
-        string $align = 'center', int $innerPad = 4, bool $newline = true
-    ): Console
+        string $message, int|string|null $size = null, string $align = 'center',
+        int $innerPad = 4, bool $newline = true, bool $return = false
+    ): Console|string
     {
-        return $this->alert($message, Color::BRIGHT_BOLD_WHITE, Color::BRIGHT_BLACK, $size, $align, $innerPad, $newline);
+        return $this->alert($message, Color::BRIGHT_BOLD_WHITE, Color::BRIGHT_BLACK, $size, $align, $innerPad, $newline, $return);
     }
 
     /**
@@ -969,14 +1015,15 @@ class Console
      * @param  string          $align
      * @param  int             $innerPad
      * @param  bool            $newline
-     * @return Console
+     * @param  bool            $return
+     * @return Console|string
      */
     public function alertLight(
-        string $message, int|string|null $size = null,
-        string $align = 'center', int $innerPad = 4, bool $newline = true
-    ): Console
+        string $message, int|string|null $size = null, string $align = 'center',
+        int $innerPad = 4, bool $newline = true, bool $return = false
+    ): Console|string
     {
-        return $this->alert($message, Color::BOLD_BLACK, Color::WHITE, $size, $align, $innerPad, $newline);
+        return $this->alert($message, Color::BOLD_BLACK, Color::WHITE, $size, $align, $innerPad, $newline, $return);
     }
 
     /**

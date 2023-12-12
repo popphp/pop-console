@@ -261,9 +261,7 @@ HEADER
             $console->setWidth(160)->setHeight(50);
         }
 
-        ob_start();
-        $console->line();
-        $result = ob_get_clean();
+        $result = $console->line('-', null, true, true);
 
         $this->assertEquals(str_repeat('-', $console->getWidth()) . PHP_EOL, $result);
     }
@@ -289,9 +287,7 @@ HEADER
             $console->setWidth(160)->setHeight(50);
         }
 
-        ob_start();
-        $console->header('Hello World', '-', 'auto');
-        $result = ob_get_clean();
+        $result = $console->header('Hello World', '-', 'auto', 'left', true, true);
 
         $this->assertEquals('    Hello World' . PHP_EOL . '    --------------------' . PHP_EOL, $result);
     }
@@ -415,9 +411,9 @@ HEADER
             $console->setWidth(160)->setHeight(50);
         }
 
-        ob_start();
-        $console->alertDanger('Hello World. This is a longer alert. This is a longer alert. This is a longer alert. This is a longer alert. This is a longer alert. This is a longer alert. This is a longer alert. This is a longer alert. This is a longer alert. This is a longer alert.');
-        $result = ob_get_clean();
+        $result = $console->alertDanger(
+            'Hello World. This is a longer alert. This is a longer alert. This is a longer alert. This is a longer alert. This is a longer alert. This is a longer alert. This is a longer alert. This is a longer alert. This is a longer alert. This is a longer alert.',
+            null, 'center', 4, true, true);
 
         $this->assertTrue(str_contains($result, "\x1b[1;97m\x1b[101m"));
         $this->assertTrue(str_contains($result, "Hello World. This is a longer alert."));
@@ -616,9 +612,10 @@ HEADER
             $console->setWidth(160)->setHeight(50);
         }
 
-        ob_start();
-        $console->alertBox('Hello World. This is a longer alert. This is a longer alert.');
-        $result = ob_get_clean();
+        $result = $console->alertBox(
+            'Hello World. This is a longer alert. This is a longer alert.',
+            '-', '|', null, 'center', 4, true, true
+        );
 
         $this->assertTrue(str_contains($result, "   -------------------"));
         $this->assertTrue(str_contains($result, "    |   Hello World"));

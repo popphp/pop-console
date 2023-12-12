@@ -216,6 +216,10 @@ $console = new Console();
 $console->line();
 ```
 
+```text
+    ----------------------------------------
+```
+
 It will default to the wrap width of the console object. If no wrap width is available, it will take on
 the width of the terminal, unless a custom width is specified:
 
@@ -286,6 +290,7 @@ $console->alertLight('Hello World', 'auto');
 $console->alertBox('Hello World', '-', '|', 'auto');
 ```
 
+The `alertBox()` method produces a colorless alert box with a border made of character strings.
 The above code will produce the following output to the console terminal:
 
 ![Alerts](tests/tmp/alerts.png)
