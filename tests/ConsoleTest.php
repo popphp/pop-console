@@ -14,6 +14,9 @@ class ConsoleTest extends TestCase
     public function testConstructor()
     {
         $console = new Console(100, '    ');
+        if (!$console->hasWidth()) {
+            $console->setWidth(160)->setHeight(50);
+        }
         $this->assertInstanceOf('Pop\Console\Console', $console);
         $this->assertEquals(100, $console->getWrap());
         $this->assertEquals('    ', $console->getIndent());
@@ -29,6 +32,9 @@ class ConsoleTest extends TestCase
     public function testSetAndGetHeader()
     {
         $console = new Console();
+        if (!$console->hasWidth()) {
+            $console->setWidth(160)->setHeight(50);
+        }
         $console->setHeader('header');
         $this->assertEquals('header', $console->getHeader());
     }
@@ -36,6 +42,9 @@ class ConsoleTest extends TestCase
     public function testSetAndGetFooter()
     {
         $console = new Console();
+        if (!$console->hasWidth()) {
+            $console->setWidth(160)->setHeight(50);
+        }
         $console->setFooter('footer');
         $this->assertEquals('footer', $console->getFooter());
     }
@@ -43,6 +52,9 @@ class ConsoleTest extends TestCase
     public function testSetAndGetHeaderSent()
     {
         $console = new Console();
+        if (!$console->hasWidth()) {
+            $console->setWidth(160)->setHeight(50);
+        }
         $console->setHeaderSent(true);
         $this->assertTrue($console->getHeaderSent());
     }
@@ -50,6 +62,9 @@ class ConsoleTest extends TestCase
     public function testGetAvailableColors()
     {
         $console = new Console();
+        if (!$console->hasWidth()) {
+            $console->setWidth(160)->setHeight(50);
+        }
         $colors = $console->getAvailableColors();
         $this->assertEquals(33, count($colors));
         $this->assertTrue(isset($colors['MAGENTA']));
@@ -61,6 +76,9 @@ class ConsoleTest extends TestCase
     public function testSetAndGetHelpColors()
     {
         $console = new Console();
+        if (!$console->hasWidth()) {
+            $console->setWidth(160)->setHeight(50);
+        }
         $console->setHelpColors(Color::RED, Color::WHITE, Color::BLUE, Color::MAGENTA);
         $this->assertEquals(4, count($console->getHelpColors()));
     }
@@ -68,6 +86,9 @@ class ConsoleTest extends TestCase
     public function testGetServer()
     {
         $console = new Console();
+        if (!$console->hasWidth()) {
+            $console->setWidth(160)->setHeight(50);
+        }
         $this->assertTrue(is_array($console->getServer()));
         $this->assertNull($console->getServer('foo'));
     }
@@ -75,6 +96,9 @@ class ConsoleTest extends TestCase
     public function testGetEnv()
     {
         $console = new Console();
+        if (!$console->hasWidth()) {
+            $console->setWidth(160)->setHeight(50);
+        }
         $this->assertTrue(is_array($console->getEnv()));
         $this->assertNull($console->getEnv('foo'));
     }
@@ -82,6 +106,9 @@ class ConsoleTest extends TestCase
     public function testAddAndGetCommand()
     {
         $console = new Console();
+        if (!$console->hasWidth()) {
+            $console->setWidth(160)->setHeight(50);
+        }
         $console->addCommand(new Command('help'));
         $this->assertEquals('help', $console->getCommand('help')->getName());
     }
@@ -102,6 +129,9 @@ class ConsoleTest extends TestCase
         ]]);
 
         $console = new Console();
+        if (!$console->hasWidth()) {
+            $console->setWidth(160)->setHeight(50);
+        }
         $console->addCommandsFromRoutes($app->router()->getRouteMatch(), './app');
         $this->assertEquals('./app app:init', $console->getCommand('./app app:init')->getName());
         $this->assertEquals('./app db:config', $console->getCommand('./app db:config')->getName());
@@ -110,6 +140,9 @@ class ConsoleTest extends TestCase
     public function testAddAndGetCommands()
     {
         $console = new Console();
+        if (!$console->hasWidth()) {
+            $console->setWidth(160)->setHeight(50);
+        }
         $console->addCommand(new Command('help'));
         $console->addCommands([
             new Command('list'),
@@ -125,6 +158,9 @@ class ConsoleTest extends TestCase
     public function testGetCommands()
     {
         $console = new Console();
+        if (!$console->hasWidth()) {
+            $console->setWidth(160)->setHeight(50);
+        }
         $console->addCommand(new Command('help'));
         $console->addCommands([
             new Command('list'),
@@ -138,6 +174,9 @@ class ConsoleTest extends TestCase
         $command = new Command('hello');
         $command->setHelp('Hello World');
         $console = new Console();
+        if (!$console->hasWidth()) {
+            $console->setWidth(160)->setHeight(50);
+        }
         $console->addCommand($command);
         $this->assertEquals('Hello World', $console->help('hello'));
     }
@@ -146,6 +185,9 @@ class ConsoleTest extends TestCase
     {
         $command = new Command('hello', '-v', 'This is the help');
         $console = new Console(80, '    ');
+        if (!$console->hasWidth()) {
+            $console->setWidth(160)->setHeight(50);
+        }
         $console->addCommand($command);
 
         ob_start();
@@ -164,6 +206,9 @@ class ConsoleTest extends TestCase
         $userShow   = new Command('user show', '-v --option=123 [<id>]', 'This is the users list command.');
 
         $console = new Console(80, '    ');
+        if (!$console->hasWidth()) {
+            $console->setWidth(160)->setHeight(50);
+        }
         $console->setHelpColors(Color::BOLD_BLUE, Color::YELLOW, Color::BOLD_MAGENTA);
 
         $console->setHeader(
@@ -196,6 +241,9 @@ HEADER
     public function testLine1()
     {
         $console = new Console(10);
+        if (!$console->hasWidth()) {
+            $console->setWidth(160)->setHeight(50);
+        }
 
         ob_start();
         $console->line();
@@ -207,6 +255,9 @@ HEADER
     public function testLine2()
     {
         $console = new Console(null, 0);
+        if (!$console->hasWidth()) {
+            $console->setWidth(160)->setHeight(50);
+        }
 
         ob_start();
         $console->line();
@@ -218,6 +269,9 @@ HEADER
     public function testHeader1()
     {
         $console = new Console();
+        if (!$console->hasWidth()) {
+            $console->setWidth(160)->setHeight(50);
+        }
 
         ob_start();
         $console->header('Hello World');
@@ -229,6 +283,9 @@ HEADER
     public function testHeader2()
     {
         $console = new Console(20);
+        if (!$console->hasWidth()) {
+            $console->setWidth(160)->setHeight(50);
+        }
 
         ob_start();
         $console->header('Hello World', '-', 'auto');
@@ -240,6 +297,9 @@ HEADER
     public function testHeader3()
     {
         $console = new Console(20);
+        if (!$console->hasWidth()) {
+            $console->setWidth(160)->setHeight(50);
+        }
 
         ob_start();
         $console->header('Hello World', '-', 'auto', 'right');
@@ -251,6 +311,9 @@ HEADER
     public function testHeader4()
     {
         $console = new Console(null, 0);
+        if (!$console->hasWidth()) {
+            $console->setWidth(160)->setHeight(50);
+        }
 
         ob_start();
         $console->header('Hello World', '-', 'auto');
@@ -262,6 +325,9 @@ HEADER
     public function testHeader5()
     {
         $console = new Console(10);
+        if (!$console->hasWidth()) {
+            $console->setWidth(160)->setHeight(50);
+        }
 
         ob_start();
         $console->header('Hello World', '-', null, 'right');
@@ -273,6 +339,9 @@ HEADER
     public function testHeader6()
     {
         $console = new Console(null, 0);
+        if (!$console->hasWidth()) {
+            $console->setWidth(160)->setHeight(50);
+        }
 
         ob_start();
         $console->header('Hello World. This is a long string of text. This is a long string of text. This is a long string of text. This is a long string of text. This is a long string of text. This is a long string of text.', '-', null, 'center');
@@ -284,6 +353,9 @@ HEADER
     public function testHeaderLeft()
     {
         $console = new Console(20);
+        if (!$console->hasWidth()) {
+            $console->setWidth(160)->setHeight(50);
+        }
 
         ob_start();
         $console->headerLeft('Hello World');
@@ -295,6 +367,9 @@ HEADER
     public function testHeaderRight()
     {
         $console = new Console(20);
+        if (!$console->hasWidth()) {
+            $console->setWidth(160)->setHeight(50);
+        }
 
         ob_start();
         $console->headerRight('Hello World');
@@ -306,6 +381,9 @@ HEADER
     public function testHeaderCenter()
     {
         $console = new Console(20);
+        if (!$console->hasWidth()) {
+            $console->setWidth(160)->setHeight(50);
+        }
 
         ob_start();
         $console->headerCenter('Hello World');
@@ -317,6 +395,9 @@ HEADER
     public function testAlert1()
     {
         $console = new Console(20);
+        if (!$console->hasWidth()) {
+            $console->setWidth(160)->setHeight(50);
+        }
 
         ob_start();
         $console->alertDanger('Hello World. This is a longer alert.');
@@ -328,6 +409,9 @@ HEADER
     public function testAlert2()
     {
         $console = new Console(null);
+        if (!$console->hasWidth()) {
+            $console->setWidth(160)->setHeight(50);
+        }
 
         ob_start();
         $console->alertDanger('Hello World. This is a longer alert. This is a longer alert. This is a longer alert. This is a longer alert. This is a longer alert. This is a longer alert. This is a longer alert. This is a longer alert. This is a longer alert. This is a longer alert.');
@@ -340,6 +424,9 @@ HEADER
     public function testAlert3()
     {
         $console = new Console(20);
+        if (!$console->hasWidth()) {
+            $console->setWidth(160)->setHeight(50);
+        }
 
         ob_start();
         $console->alertDanger('Hello World.', 'auto');
@@ -351,6 +438,9 @@ HEADER
     public function testAlert4()
     {
         $console = new Console(null);
+        if (!$console->hasWidth()) {
+            $console->setWidth(160)->setHeight(50);
+        }
 
         ob_start();
         $console->alertDanger('Hello World.', 'auto');
@@ -363,6 +453,9 @@ HEADER
     public function testAlert5()
     {
         $console = new Console(null);
+        if (!$console->hasWidth()) {
+            $console->setWidth(160)->setHeight(50);
+        }
 
         ob_start();
         $console->alertDanger('Hello World.', 'auto', 'left');
@@ -375,6 +468,9 @@ HEADER
     public function testAlert6()
     {
         $console = new Console(null);
+        if (!$console->hasWidth()) {
+            $console->setWidth(160)->setHeight(50);
+        }
 
         ob_start();
         $console->alertDanger('Hello World.', 'auto', 'right');
@@ -387,6 +483,9 @@ HEADER
     public function testAlertDanger()
     {
         $console = new Console(20);
+        if (!$console->hasWidth()) {
+            $console->setWidth(160)->setHeight(50);
+        }
 
         ob_start();
         $console->alertDanger('Hello World');
@@ -398,6 +497,9 @@ HEADER
     public function testAlertWarning()
     {
         $console = new Console(20);
+        if (!$console->hasWidth()) {
+            $console->setWidth(160)->setHeight(50);
+        }
 
         ob_start();
         $console->alertWarning('Hello World');
@@ -409,6 +511,9 @@ HEADER
     public function testAlertSuccess()
     {
         $console = new Console(20);
+        if (!$console->hasWidth()) {
+            $console->setWidth(160)->setHeight(50);
+        }
 
         ob_start();
         $console->alertSuccess('Hello World');
@@ -420,6 +525,9 @@ HEADER
     public function testAlertInfo()
     {
         $console = new Console(20);
+        if (!$console->hasWidth()) {
+            $console->setWidth(160)->setHeight(50);
+        }
 
         ob_start();
         $console->alertInfo('Hello World');
@@ -431,6 +539,9 @@ HEADER
     public function testAlertPrimary()
     {
         $console = new Console(20);
+        if (!$console->hasWidth()) {
+            $console->setWidth(160)->setHeight(50);
+        }
 
         ob_start();
         $console->alertPrimary('Hello World');
@@ -442,6 +553,9 @@ HEADER
     public function testAlertSecondary()
     {
         $console = new Console(20);
+        if (!$console->hasWidth()) {
+            $console->setWidth(160)->setHeight(50);
+        }
 
         ob_start();
         $console->alertSecondary('Hello World');
@@ -453,6 +567,9 @@ HEADER
     public function testAlertDark()
     {
         $console = new Console(20);
+        if (!$console->hasWidth()) {
+            $console->setWidth(160)->setHeight(50);
+        }
 
         ob_start();
         $console->alertDark('Hello World');
@@ -464,6 +581,9 @@ HEADER
     public function testAlertLight()
     {
         $console = new Console(20);
+        if (!$console->hasWidth()) {
+            $console->setWidth(160)->setHeight(50);
+        }
 
         ob_start();
         $console->alertLight('Hello World');
@@ -475,6 +595,9 @@ HEADER
     public function testAppend()
     {
         $console = new Console();
+        if (!$console->hasWidth()) {
+            $console->setWidth(160)->setHeight(50);
+        }
         $console->append('Hello World');
 
         ob_start();
@@ -487,6 +610,9 @@ HEADER
     public function testWrite()
     {
         $console = new Console();
+        if (!$console->hasWidth()) {
+            $console->setWidth(160)->setHeight(50);
+        }
 
         ob_start();
         $console->write('Hello World');
@@ -498,6 +624,9 @@ HEADER
     public function testWriteZero()
     {
         $console = new Console(0);
+        if (!$console->hasWidth()) {
+            $console->setWidth(160)->setHeight(50);
+        }
 
         ob_start();
         $console->write('Hello World');
@@ -509,6 +638,9 @@ HEADER
     public function testClear()
     {
         $console = new Console();
+        if (!$console->hasWidth()) {
+            $console->setWidth(160)->setHeight(50);
+        }
         ob_start();
         $console->clear();
         $result = ob_get_clean();
@@ -521,6 +653,9 @@ HEADER
 
         ob_start();
         $console = new Console();
+        if (!$console->hasWidth()) {
+            $console->setWidth(160)->setHeight(50);
+        }
         $answer  = $console->prompt('Test prompt: ');
         $result = ob_get_clean();
 
@@ -533,6 +668,9 @@ HEADER
 
         ob_start();
         $console = new Console();
+        if (!$console->hasWidth()) {
+            $console->setWidth(160)->setHeight(50);
+        }
         $console->setHeader('Test Header:');
         $console->setIndent('    ');
         $answer  = $console->prompt('Test prompt: ');
@@ -547,6 +685,9 @@ HEADER
 
         ob_start();
         $console = new Console();
+        if (!$console->hasWidth()) {
+            $console->setWidth(160)->setHeight(50);
+        }
         $console->setHeader('Test Header:');
         $answer  = $console->prompt('Test prompt: ');
         $result = ob_get_clean();
@@ -560,6 +701,9 @@ HEADER
 
         ob_start();
         $console = new Console();
+        if (!$console->hasWidth()) {
+            $console->setWidth(160)->setHeight(50);
+        }
         $console->setIndent('    ');
         $answer  = $console->prompt('Test prompt: ', ['Y', 'N']);
         $result = ob_get_clean();
@@ -574,6 +718,9 @@ HEADER
 
         ob_start();
         $console = new Console();
+        if (!$console->hasWidth()) {
+            $console->setWidth(160)->setHeight(50);
+        }
         $answer  = $console->confirm();
         $result = ob_get_clean();
 
