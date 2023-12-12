@@ -24,7 +24,7 @@ use ReflectionClass;
  * @author     Nick Sagona, III <dev@nolainteractive.com>
  * @copyright  Copyright (c) 2009-2024 NOLA Interactive, LLC. (http://www.nolainteractive.com)
  * @license    http://www.popphp.org/license     New BSD License
- * @version    4.0.0
+ * @version    4.1.0
  */
 class Console
 {
@@ -104,7 +104,7 @@ class Console
     /**
      * Instantiate a new console object
      *
-     * @param  int        $wrap
+     * @param  ?int       $wrap
      * @param  int|string $margin
      */
     public function __construct(?int $wrap = 80, int|string $margin = 4)
@@ -204,11 +204,15 @@ class Console
      * Set the console header
      *
      * @param  string $header
+     * @param  bool   $newline
      * @return Console
      */
-    public function setHeader(string $header): Console
+    public function setHeader(string $header, bool $newline = true): Console
     {
         $this->header = $header;
+        if ($newline) {
+            $this->header .= PHP_EOL;
+        }
         return $this;
     }
 
@@ -216,11 +220,15 @@ class Console
      * Set the console footer
      *
      * @param  string $footer
+     * @param  bool   $newline
      * @return Console
      */
-    public function setFooter(string $footer): Console
+    public function setFooter(string $footer, bool $newline = true): Console
     {
         $this->footer = $footer;
+        if ($newline) {
+            $this->footer = PHP_EOL . $this->footer;
+        }
         return $this;
     }
 
@@ -312,6 +320,26 @@ class Console
     public function getHeight(): int
     {
         return $this->height;
+    }
+
+    /**
+     * Check is console terminal supports color
+     *
+     * @return bool
+     */
+    public function isColor(): bool
+    {
+        return (isset($_SERVER['TERM']) && (stripos($_SERVER['TERM'], 'color') !== false));
+    }
+
+    /**
+     * Check is console terminal is in a Windows environment
+     *
+     * @return bool
+     */
+    public function isWindows(): bool
+    {
+        return (stripos(PHP_OS, 'win') === false);
     }
 
     /**
@@ -679,7 +707,7 @@ class Console
     }
 
     /**
-     * Print an alert box out to the console
+     * Print a colored alert box out to the console
      *
      * @param  string          $message
      * @param  int             $fg
@@ -733,6 +761,73 @@ class Console
             echo $this->getIndent() . Color::colorize($messageLine, $fg, $bg) . PHP_EOL;
         }
         echo $this->getIndent() . Color::colorize(str_repeat(' ', $size), $fg, $bg) . PHP_EOL;
+        if ($newline) {
+            echo PHP_EOL;
+        }
+
+        return $this;
+    }
+
+    /**
+     * Print a colorless alert outline box out to the console
+     *
+     * @param  string          $message
+     * @param  string          $h
+     * @param  ?string         $v
+     * @param  int|string|null $size
+     * @param  string          $align
+     * @param  int             $innerPad
+     * @param  bool            $newline
+     * @return Console
+     */
+    public function alertBox(
+        string $message, string $h = '-', ?string $v = '|', int|string|null $size = null,
+        string $align = 'center', int $innerPad = 4, bool $newline = true
+    ): Console
+    {
+        if ($size === null) {
+            if (!empty($this->wrap) && (strlen($message) > $this->wrap)) {
+                $size = $this->wrap;
+            } else if (!empty($this->width) && (strlen($message) > $this->width)) {
+                $size = $this->width - ($this->margin * 2);
+            } else {
+                $size = strlen($message) + ($innerPad * 2);
+            }
+        } else if ($size == 'auto') {
+            if (!empty($this->wrap)) {
+                $size = $this->wrap;
+            } else if (!empty($this->width)) {
+                $size = $this->width - ($this->margin * 2);
+            }
+        }
+
+        $innerSize    = $size - ($innerPad * 2);
+        $messageLines = [];
+        $lines        = (strlen($message) > $innerSize) ?
+            explode(PHP_EOL, wordwrap($message, $innerSize, PHP_EOL)) : [$message];
+
+        foreach ($lines as $line) {
+            $pad = $this->calculatePad($line, $size, $align);
+            if ($align == 'center') {
+                $messageLines[] = str_repeat(' ', $pad) . $line . str_repeat(' ', ($size - strlen($line) - $pad));
+            } else if ($align == 'left') {
+                $messageLines[] = str_repeat(' ', $innerPad) . $line . str_repeat(' ', ($size - strlen($line) - $pad - $innerPad));
+            } else if ($align == 'right') {
+                $messageLines[] = str_repeat(' ', ($size - strlen($line) - $innerPad)) . $line . str_repeat(' ', $innerPad);
+            }
+        }
+
+        echo PHP_EOL;
+        echo $this->getIndent() . str_repeat($h, $size) . PHP_EOL;
+        echo $this->getIndent() . $v . str_repeat(' ', $size - 2) . $v . PHP_EOL;
+        foreach ($messageLines as $messageLine) {
+            if (!empty($v) && str_starts_with($messageLine, ' ') && str_ends_with($messageLine, ' ')) {
+                $messageLine = $v . substr($messageLine, 1, -1) . $v;
+            }
+            echo $this->getIndent() . $messageLine . PHP_EOL;
+        }
+        echo $this->getIndent() . $v . str_repeat(' ', $size - 2) . $v . PHP_EOL;
+        echo $this->getIndent() . str_repeat($h, $size) . PHP_EOL;
         if ($newline) {
             echo PHP_EOL;
         }

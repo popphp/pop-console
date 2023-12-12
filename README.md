@@ -12,6 +12,9 @@ pop-console
 * [Quickstart](#quickstart)
 * [Response Buffer](#response-buffer)
 * [Colors](#colors)
+* [Lines](#lines)
+* [Headers](#headers)
+* [Alerts](#alert)
 * [Prompt](#prompt)
 * [Commands](#commands)
 * [Help Screen](#help-screen)
@@ -44,7 +47,7 @@ Install `pop-console` using Composer.
 Or, require it in your composer.json file
 
     "require": {
-        "popphp/pop-console" : "^4.0.0"
+        "popphp/pop-console" : "^4.1.0"
     }
 
 [Top](#pop-console)
@@ -61,8 +64,8 @@ a prepended header and appended footer.
 use Pop\Console\Console;
 
 $console = new Console();
-$console->setHeader('My Application');
-$console->setFooter('The End');
+$console->setHeader('My Application'); // Set a global header at the start of the script
+$console->setFooter('The End');        // Set a global footer at the end of the script
 
 $console->append('Here is some console information.');
 $console->append('Hope you enjoyed it!');
@@ -80,14 +83,15 @@ The above will output:
     The End
 ```
 
-### Enforcing a terminal width
+### Console wrap and margin
 
-The allowed text width can be enforced by passing the `$width` parameter to the constructor:
+By default, the console object enforces a wrap width at 80 characters and provides a margin of 4 spaces for readability.
+These values can be changed to whatever is needed for the application.
 
 ```php
 use Pop\Console\Console;
 
-$console = new Console(40);
+$console = new Console(40, 2); // wrap width of 40, margin of 2 spaces
 $console->append(
     'Here is some console information. This is a really long string. It will have to wrap.'
 );
@@ -95,29 +99,9 @@ $console->send();
 ```
 
 ```text
-    Here is some console information. This
-    is a really long string. It will have to
-    wrap.
-```
-
-### Setting an indent
-
-By default, an indent of four spaces is set to provide a margin from the edge of the terminal. This can be adjusted
-or turned off by passing it to the constructor:
-
-```php
-use Pop\Console\Console;
-
-$console = new Console(40, '  ');
-$console->append(
-    'Here is some console information using a 2 space indent. It will have to wrap.'
-);
-$console->send();
-```
-
-```text
-  Here is some console information using a
-  2 space indent. It will have to wrap.
+  Here is some console information. This
+  is a really long string. It will have to
+  wrap.
 ```
 
 [Top](#pop-console)
@@ -145,9 +129,9 @@ $console->write(
 );
 ```
 
-### Newlines and Indents
+### Newline and Margin
 
-By default, calling the `append()` or `write()` methods will produce the indent value at the beginning
+By default, calling the `append()` or `write()` methods will produce the margin value at the beginning
 of the content and a newline at the end of the content. If this is not the desired behavior, boolean flags
 can be passed to control this:
 
@@ -155,14 +139,10 @@ can be passed to control this:
 use Pop\Console\Console;
 
 $console = new Console(40);
-$console->write('Here ', false);          // No new line, but use indent
-$console->write('is ', false, false);     // No new line, no indent
-$console->write('some ', false, false);   // No new line, no indent
-$console->write('content.', true, false); // Use new line, but no indent
-```
-
-```text
-    Here is some content.
+$console->write('Here ', false);          // No new line, but use margin
+$console->write('is ', false, false);     // No new line, no margin
+$console->write('some ', false, false);   // No new line, no margin
+$console->write('content.', true, false); // Use new line, but no margin
 ```
 
 [Top](#pop-console)
@@ -171,12 +151,16 @@ Colors
 ------
 
 On a console terminal that supports it, you can colorize text outputted to the console
-with the ``colorize()`` method:
+with the ``Pop\Console\Color::colorize()`` method:
 
 ```php
-$console->append(
+use Pop\Console\Console;
+use Pop\Console\Color;
+
+$console = new Console();
+$console->write(
     'Here is some ' . 
-    $console->colorize('IMPORTANT', Console::BOLD_RED) .
+    Color::colorize('IMPORTANT', Color::BOLD_RED) .
     ' console information.'
 );
 ```
@@ -192,7 +176,15 @@ Available color constants include:
 - MAGENTA
 - CYAN
 - WHITE
-- GRAY
+- BRIGHT_BLACK
+- BRIGHT_RED
+- BRIGHT_GREEN
+- BRIGHT_YELLOW
+- BRIGHT_BLUE
+- BRIGHT_MAGENTA
+- BRIGHT_CYAN
+- BRIGHT_WHITE
+- BOLD_BLACK
 - BOLD_RED
 - BOLD_GREEN
 - BOLD_YELLOW
@@ -200,6 +192,103 @@ Available color constants include:
 - BOLD_MAGENTA
 - BOLD_CYAN
 - BOLD_WHITE
+- BRIGHT_BOLD_BLACK
+- BRIGHT_BOLD_RED
+- BRIGHT_BOLD_GREEN
+- BRIGHT_BOLD_YELLOW
+- BRIGHT_BOLD_BLUE
+- BRIGHT_BOLD_MAGENTA
+- BRIGHT_BOLD_CYAN
+- BRIGHT_BOLD_WHITE
+
+[Top](#pop-console)
+
+Lines
+-----
+
+The `line()` method provides a way to print a horizontal line rule out to the terminal. The default
+character for the line is a dash `-`, but any character can be passed into the method.
+
+```php
+use Pop\Console\Console;
+
+$console = new Console();
+$console->line();
+```
+
+It will default to the wrap width of the console object. If no wrap width is available, it will take on
+the width of the terminal, unless a custom width is specified:
+
+```php
+use Pop\Console\Console;
+
+$console = new Console();
+$console->line('=', 20);
+```
+
+```text
+    ====================
+```
+
+[Top](#pop-console)
+
+Headers
+-------
+
+The `header()` method provides a way to output a separate block of text with an underline emphasis:
+
+```php
+use Pop\Console\Console;
+
+$console = new Console(80);
+$console->header('Hello World');
+```
+
+```text
+    Hello World
+    -----------
+```
+
+The character, size and alignment can be controlled as well:
+
+```php
+use Pop\Console\Console;
+
+$console = new Console();
+$console->header('Hello World', '=', 40, 'center');
+```
+
+```text
+                   Hello World
+    ========================================
+```
+
+[Top](#pop-console)
+
+Alerts
+------
+
+Alerts are specially formatted boxes that provide style and enhancement to the user's experience
+in regard to important information and notifications.
+
+```php
+use Pop\Console\Console;
+
+$console = new Console(40);
+$console->alertDanger('Hello World', 'auto');
+$console->alertWarning('Hello World', 'auto');
+$console->alertSuccess('Hello World', 'auto');
+$console->alertInfo('Hello World', 'auto');
+$console->alertPrimary('Hello World', 'auto');
+$console->alertSecondary('Hello World', 'auto');
+$console->alertDark('Hello World', 'auto');
+$console->alertLight('Hello World', 'auto');
+$console->alertBox('Hello World', '-', '|', 'auto');
+```
+
+The above code will produce the following output to the console terminal:
+
+![Alerts](tests/tmp/alerts.png)
 
 [Top](#pop-console)
 
@@ -245,6 +334,18 @@ $ ./app
     Your favorite letter is B.
 ```
 
+### Confirm
+
+The `confirm()` is a shorthand version of a prompt to ask if the user is sure they want to proceed,
+else the application will exit:
+
+```php
+use Pop\Console\Console;
+
+$console = new Console();
+$console->confirm();
+$console->write('The user said yes.');
+```
 
 [Top](#pop-console)
 
@@ -316,7 +417,7 @@ Let's take a look at the abstract constructor of the `pop-kettle` component.
         $this->console     = $console;
 
         $this->console->setHelpColors(
-            Console::BOLD_CYAN, Console::BOLD_GREEN, Console::BOLD_MAGENTA
+            Color::BOLD_CYAN, Color::BOLD_GREEN, Color::BOLD_MAGENTA
             );
         $this->console->addCommandsFromRoutes(
             $application->router()->getRouteMatch(), './kettle'

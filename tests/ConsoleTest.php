@@ -27,6 +27,8 @@ class ConsoleTest extends TestCase
         $this->assertTrue($console->hasWrap());
         $this->assertGreaterThan(0, $console->getWidth());
         $this->assertGreaterThan(0, $console->getHeight());
+        $this->assertIsBool($console->isColor());
+        $this->assertIsBool($console->isWindows());
     }
 
     public function testSetAndGetHeader()
@@ -36,7 +38,7 @@ class ConsoleTest extends TestCase
             $console->setWidth(160)->setHeight(50);
         }
         $console->setHeader('header');
-        $this->assertEquals('header', $console->getHeader());
+        $this->assertEquals('header' . PHP_EOL, $console->getHeader());
     }
 
     public function testSetAndGetFooter()
@@ -46,7 +48,7 @@ class ConsoleTest extends TestCase
             $console->setWidth(160)->setHeight(50);
         }
         $console->setFooter('footer');
-        $this->assertEquals('footer', $console->getFooter());
+        $this->assertEquals(PHP_EOL . 'footer', $console->getFooter());
     }
 
     public function testSetAndGetHeaderSent()
@@ -590,6 +592,96 @@ HEADER
         $result = ob_get_clean();
 
         $this->assertTrue(str_contains($result, "\x1b[1;30m\x1b[47m    Hello World    \x1b[0m"));
+    }
+
+    public function testAlertBox1()
+    {
+        $console = new Console(20);
+        if (!$console->hasWidth()) {
+            $console->setWidth(160)->setHeight(50);
+        }
+
+        ob_start();
+        $console->alertBox('Hello World');
+        $result = ob_get_clean();
+
+        $this->assertTrue(str_contains($result, "   -------------------"));
+        $this->assertTrue(str_contains($result, "    |   Hello World   |"));
+    }
+
+    public function testAlertBox2()
+    {
+        $console = new Console(20);
+        if (!$console->hasWidth()) {
+            $console->setWidth(160)->setHeight(50);
+        }
+
+        ob_start();
+        $console->alertBox('Hello World. This is a longer alert. This is a longer alert.');
+        $result = ob_get_clean();
+
+        $this->assertTrue(str_contains($result, "   -------------------"));
+        $this->assertTrue(str_contains($result, "    |   Hello World"));
+    }
+
+    public function testAlertBox3()
+    {
+        $console = new Console(null);
+        if (!$console->hasWidth()) {
+            $console->setWidth(160)->setHeight(50);
+        }
+
+        ob_start();
+        $console->alertBox('Hello World. This is a longer alert. This is a longer alert. This is a longer alert. This is a longer alert. This is a longer alert. This is a longer alert. This is a longer alert. This is a longer alert. This is a longer alert. This is a longer alert.');
+        $result = ob_get_clean();
+
+        $this->assertTrue(str_contains($result, "   -------------------"));
+        $this->assertTrue(str_contains($result, "Hello World"));
+    }
+
+    public function testAlertBox4()
+    {
+        $console = new Console(80);
+        if (!$console->hasWidth()) {
+            $console->setWidth(160)->setHeight(50);
+        }
+
+        ob_start();
+        $console->alertBox('Hello World. This is a longer alert.', '-', '|', 'auto', 'center');
+        $result = ob_get_clean();
+
+        $this->assertTrue(str_contains($result, "-------------------"));
+        $this->assertTrue(str_contains($result, "Hello World"));
+    }
+
+    public function testAlertBox5()
+    {
+        $console = new Console(null);
+        if (!$console->hasWidth()) {
+            $console->setWidth(160)->setHeight(50);
+        }
+
+        ob_start();
+        $console->alertBox('Hello World. This is a longer alert.', '-', '|', 'auto', 'right');
+        $result = ob_get_clean();
+
+        $this->assertTrue(str_contains($result, "-------------------"));
+        $this->assertTrue(str_contains($result, "Hello World"));
+    }
+
+    public function testAlertBox6()
+    {
+        $console = new Console(null);
+        if (!$console->hasWidth()) {
+            $console->setWidth(160)->setHeight(50);
+        }
+
+        ob_start();
+        $console->alertBox('Hello World. This is a longer alert.', '-', '|', 'auto', 'left');
+        $result = ob_get_clean();
+
+        $this->assertTrue(str_contains($result, "-------------------"));
+        $this->assertTrue(str_contains($result, "Hello World"));
     }
 
     public function testAppend()
