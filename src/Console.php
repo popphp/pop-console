@@ -783,8 +783,7 @@ class Console
             }
         }
 
-        $alert  = PHP_EOL;
-        $alert .= $this->getIndent() . Color::colorize(str_repeat(' ', $size), $fg, $bg) . PHP_EOL;
+        $alert = $this->getIndent() . Color::colorize(str_repeat(' ', $size), $fg, $bg) . PHP_EOL;
         foreach ($messageLines as $messageLine) {
             $alert .= $this->getIndent() . Color::colorize($messageLine, $fg, $bg) . PHP_EOL;
         }
@@ -851,8 +850,7 @@ class Console
             }
         }
 
-        $alert  = PHP_EOL;
-        $alert .= $this->getIndent() . str_repeat($h, $size) . PHP_EOL;
+        $alert  = $this->getIndent() . str_repeat($h, $size) . PHP_EOL;
         $alert .= $this->getIndent() . $v . str_repeat(' ', $size - 2) . $v . PHP_EOL;
         foreach ($messageLines as $messageLine) {
             if (!empty($v) && str_starts_with($messageLine, ' ') && str_ends_with($messageLine, ' ')) {
