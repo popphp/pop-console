@@ -14,7 +14,7 @@ pop-console
 * [Colors](#colors)
 * [Lines](#lines)
 * [Headers](#headers)
-* [Alerts](#alert)
+* [Alerts](#alerts)
 * [Prompt](#prompt)
 * [Commands](#commands)
 * [Help Screen](#help-screen)
