@@ -151,7 +151,21 @@ Colors
 ------
 
 On a console terminal that supports it, you can colorize text outputted to the console
-with the ``Pop\Console\Color::colorize()`` method:
+with the ``colorize()`` method:
+
+```php
+use Pop\Console\Console;
+use Pop\Console\Color;
+
+$console = new Console();
+$console->write(
+    'Here is some ' . 
+    $console->colorize('IMPORTANT', Color::BOLD_RED) .
+    ' console information.'
+);
+```
+
+The ``colorize()`` method is also available as a static method on the ``Pop\Console\Color`` class:
 
 ```php
 use Pop\Console\Console;
