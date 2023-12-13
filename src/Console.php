@@ -1103,6 +1103,19 @@ class Console
     }
 
     /**
+     * Colorize a string for output
+     *
+     * @param  string $string
+     * @param  ?int   $fg
+     * @param  ?int   $bg
+     * @return string
+     */
+    public function colorize(string $string, ?int $fg = null, ?int $bg = null): string
+    {
+        return Color::colorize($string, $fg, $bg);
+    }
+
+    /**
      * Append a string of text to the response body
      *
      * @param  ?string $text

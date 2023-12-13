@@ -681,6 +681,15 @@ HEADER
         $this->assertTrue(str_contains($result, "Hello World"));
     }
 
+    public function testColor()
+    {
+        $console = new Console();
+        $string  = $console->colorize('Hello World', Color::BOLD_BLUE, Color::RED);
+        $this->assertStringContainsString('[1;34m', $string);
+        $this->assertStringContainsString('[41m', $string);
+        $this->assertStringContainsString('[0m', $string);
+    }
+
     public function testAppend()
     {
         $console = new Console();
