@@ -1096,7 +1096,7 @@ class Console
 
         if ((strtolower($response) == 'n') || (strtolower($response) == 'no')) {
             echo PHP_EOL;
-            exit();
+            exit(127);
         }
 
         return $response;
