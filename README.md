@@ -448,6 +448,6 @@ controller's `help()` method.
 
 The output looks like this:
 
-![Console Help](tests/tmp/console-help.jpg)
+![Console Help](tests/tmp/console-help.png)
 
 [Top](#pop-console)
