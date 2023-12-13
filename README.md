@@ -355,7 +355,7 @@ $ ./app
 
 ### Confirm
 
-The `confirm()` is a shorthand version of a prompt to ask if the user is sure they want to proceed,
+The `confirm()` method is a shorthand version of a prompt to ask if the user is sure they want to proceed,
 else the application will exit:
 
 ```php
