@@ -531,7 +531,7 @@ HEADER
         $console->alertInfo('Hello World');
         $result = ob_get_clean();
 
-        $this->assertTrue(str_contains($result, "\x1b[1;30m\x1b[104m    Hello World    \x1b[0m"));
+        $this->assertTrue(str_contains($result, "\x1b[1;97m\x1b[104m    Hello World    \x1b[0m"));
     }
 
     public function testAlertPrimary()

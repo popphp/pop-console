@@ -945,7 +945,7 @@ class Console
         int $innerPad = 4, bool $newline = true, bool $return = false
     ): Console|string
     {
-        return $this->alert($message, Color::BOLD_BLACK, Color::BRIGHT_BLUE, $size, $align, $innerPad, $newline, $return);
+        return $this->alert($message, Color::BRIGHT_BOLD_WHITE, Color::BRIGHT_BLUE, $size, $align, $innerPad, $newline, $return);
     }
 
     /**
