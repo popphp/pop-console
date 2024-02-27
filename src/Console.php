@@ -576,14 +576,15 @@ class Console
      * Get a help
      *
      * @param  ?string $command
+     * @param  bool    $raw
      * @return string|null
      */
-    public function help(?string $command = null): string|null
+    public function help(?string $command = null, bool $raw = false): string|null
     {
         if ($command !== null) {
             return $this->commands[$command]?->getHelp();
         } else {
-            $this->displayHelp();
+            $this->displayHelp($raw);
             return null;
         }
     }
@@ -1183,7 +1184,7 @@ class Console
      *
      * @return void
      */
-    public function displayHelp(): void
+    public function displayHelp(bool $raw = false): void
     {
         $this->response = null;
         $commands       = [];
@@ -1203,14 +1204,14 @@ class Console
                     $name1 = substr($name, 0, strpos($name, ' '));
                     $name2 = substr($name, strpos($name, ' ') + 1);
                     if (isset($this->helpColors[0])) {
-                        $name1 = Color::colorize($name1, $this->helpColors[0]);
+                        $name1 = Color::colorize($name1, $this->helpColors[0], null, $raw);
                     }
                     if (isset($this->helpColors[1])) {
-                        $name2 = Color::colorize($name2, $this->helpColors[1]);
+                        $name2 = Color::colorize($name2, $this->helpColors[1], null, $raw);
                     }
                     $name = $name1 . ' ' . $name2;
                 } else if (isset($this->helpColors[0])){
-                    $name = Color::colorize($name, $this->helpColors[0]);
+                    $name = Color::colorize($name, $this->helpColors[0], null, $raw);
                 }
             }
 
@@ -1227,12 +1228,12 @@ class Console
                                 $colorIndex = 3;
                             }
                             $name .= ' ' . ((isset($this->helpColors[$colorIndex])) ?
-                                Color::colorize($p, $this->helpColors[$colorIndex]) : $p);
+                                    Color::colorize($p, $this->helpColors[$colorIndex], null, $raw) : $p);
                         }
                     }
                 } else {
                     $name .= ' ' . ((isset($this->helpColors[2])) ?
-                        Color::colorize($params, $this->helpColors[2]) : $params);
+                            Color::colorize($params, $this->helpColors[2], null, $raw) : $params);
                 }
             }
 

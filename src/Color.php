@@ -135,11 +135,12 @@ class Color
      * @param  string $string
      * @param  ?int   $fg
      * @param  ?int   $bg
+     * @param  bool   $raw
      * @return string
      */
-    public static function colorize(string $string, ?int $fg = null, ?int $bg = null): string
+    public static function colorize(string $string, ?int $fg = null, ?int $bg = null, bool $raw = false): string
     {
-        if (stripos(PHP_OS, 'win') === false) {
+        if ((stripos(PHP_OS, 'win') === false) && (!$raw)) {
             return static::getFgColorCode($fg) . static::getBgColorCode($bg) . $string . "\x1b[0m";
         } else {
             return $string;
