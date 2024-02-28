@@ -112,7 +112,7 @@ class Console
         $height = null;
         $width  = null;
 
-        if (function_exists('exec') && stream_isatty(STDERR)) {
+        if (function_exists('exec') && stream_isatty(STDIN)) {
             if (!empty(exec('which stty'))) {
                 $sttySize = exec('stty size');
                 if (!empty($sttySize) && str_contains($sttySize, ' ')) {
