@@ -167,7 +167,7 @@ class Color
      * @param  ?int $color
      * @return mixed
      */
-    public static function getBgColorCode(int $color = null): mixed
+    public static function getBgColorCode(?int $color = null): mixed
     {
         if (($color !== null) && isset(static::$bgColorMap[$color])) {
             return "\x1b[" . static::$bgColorMap[$color] . "m";
