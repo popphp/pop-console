@@ -46,7 +46,7 @@ Install `pop-console` using Composer.
 Or, require it in your composer.json file
 
     "require": {
-        "popphp/pop-console" : "^4.2.5"
+        "popphp/pop-console" : "^4.2.6"
     }
 
 [Top](#pop-console)

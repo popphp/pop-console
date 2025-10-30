@@ -21,6 +21,6 @@ namespace Pop\Console;
  * @author     Nick Sagona, III <dev@noladev.com>
  * @copyright  Copyright (c) 2009-2026 NOLA Interactive, LLC.
  * @license    https://www.popphp.org/license     New BSD License
- * @version    4.2.5
+ * @version    4.2.6
  */
 class Exception extends \Exception {}
