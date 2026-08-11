@@ -4,7 +4,7 @@
  *
  * @link       https://github.com/popphp/popphp-framework
  * @author     Nick Sagona, III <dev@noladev.com>
- * @copyright  Copyright (c) 2009-2026 NOLA Interactive, LLC.
+ * @copyright  Copyright (c) 2009-2027 NOLA Interactive, LLC.
  * @license    https://www.popphp.org/license     New BSD License
  */
 
@@ -22,9 +22,9 @@ use ReflectionClass;
  * @category   Pop
  * @package    Pop\Console
  * @author     Nick Sagona, III <dev@noladev.com>
- * @copyright  Copyright (c) 2009-2026 NOLA Interactive, LLC.
+ * @copyright  Copyright (c) 2009-2027 NOLA Interactive, LLC.
  * @license    https://www.popphp.org/license     New BSD License
- * @version    4.2.6
+ * @version    5.0.0
  */
 class Console
 {
@@ -60,10 +60,10 @@ class Console
     protected ?string $response = null;
 
     /**
-     * Commands
-     * @var array
+     * Command registry
+     * @var CommandRegistry
      */
-    protected array $commands = [];
+    protected CommandRegistry $commands;
 
     /**
      * Console header
@@ -102,6 +102,12 @@ class Console
     protected array $env = [];
 
     /**
+     * Custom input stream for prompt input (used in place of php://stdin when set)
+     * @var mixed
+     */
+    protected mixed $inputStream = null;
+
+    /**
      * Instantiate a new console object
      *
      * @param  ?int            $wrap
@@ -138,8 +144,9 @@ class Console
             $this->setMargin((int)$margin);
         }
 
-        $this->server = (isset($_SERVER)) ? $_SERVER : [];
-        $this->env    = (isset($_ENV))    ? $_ENV    : [];
+        $this->server   = (isset($_SERVER)) ? $_SERVER : [];
+        $this->env      = (isset($_ENV))    ? $_ENV    : [];
+        $this->commands = new CommandRegistry();
     }
 
     /**
@@ -275,6 +282,23 @@ class Console
     }
 
     /**
+     * Set the input stream for prompt input
+     *
+     * @param  mixed $stream
+     * @throws Exception
+     * @return Console
+     */
+    public function setInputStream(mixed $stream): Console
+    {
+        if (!is_resource($stream)) {
+            throw new Exception('The input stream must be a valid resource.');
+        }
+
+        $this->inputStream = $stream;
+        return $this;
+    }
+
+    /**
      * Get the wrap width of the console object
      *
      * @return int
@@ -342,7 +366,7 @@ class Console
      */
     public function isWindows(): bool
     {
-        return (stripos(PHP_OS, 'win') === false);
+        return (stripos(PHP_OS, 'win') !== false);
     }
 
     /**
@@ -386,6 +410,16 @@ class Console
     }
 
     /**
+     * Has input stream
+     *
+     * @return bool
+     */
+    public function hasInputStream(): bool
+    {
+        return ($this->inputStream !== null);
+    }
+
+    /**
      * Get the console header
      *
      * @param  bool $formatted
@@ -425,6 +459,16 @@ class Console
     public function getHelpColors(): array
     {
         return $this->helpColors;
+    }
+
+    /**
+     * Get the input stream
+     *
+     * @return mixed
+     */
+    public function getInputStream(): mixed
+    {
+        return $this->inputStream;
     }
 
     /**
@@ -475,7 +519,7 @@ class Console
      */
     public function addCommand(Command $command): Console
     {
-        $this->commands[$command->getName()] = $command;
+        $this->commands->add($command);
         return $this;
     }
 
@@ -487,9 +531,7 @@ class Console
      */
     public function addCommands(array $commands): Console
     {
-        foreach ($commands as $command) {
-            $this->addCommand($command);
-        }
+        $this->commands->addAll($commands);
         return $this;
     }
 
@@ -500,7 +542,7 @@ class Console
      */
     public function getCommands(): array
     {
-        return $this->commands;
+        return $this->commands->all();
     }
 
     /**
@@ -511,7 +553,7 @@ class Console
      */
     public function getCommand(string $command): Command|null
     {
-        return $this->commands[$command] ?? null;
+        return $this->commands->get($command);
     }
 
     /**
@@ -522,7 +564,7 @@ class Console
      */
     public function hasCommand(string $command): bool
     {
-        return isset($this->commands[$command]);
+        return $this->commands->has($command);
     }
 
     /**
@@ -534,27 +576,7 @@ class Console
      */
     public function getCommandsFromRoutes(Cli $routeMatch, ?string $scriptName = null): array
     {
-        $routeMatch->match();
-
-        $commandRoutes = $routeMatch->getRoutes();
-        $commands      = $routeMatch->getCommands();
-        $commandsToAdd = [];
-
-        foreach ($commands as $name => $command) {
-            $commandName = implode(' ', $command);
-            $params      = trim(substr((string)$name, strlen((string)$commandName)));
-            $params      = (!empty($params)) ? $params : null;
-            $help        = (isset($commandRoutes[$name]) && isset($commandRoutes[$name]['help'])) ?
-                $commandRoutes[$name]['help'] : null;
-
-            if ($scriptName !== null) {
-                $commandName = $scriptName . ' ' . $commandName;
-            }
-
-            $commandsToAdd[] = new Command($commandName, $params, $help);
-        }
-
-        return $commandsToAdd;
+        return $this->commands->fromRoutes($routeMatch, $scriptName);
     }
 
     /**
@@ -566,12 +588,7 @@ class Console
      */
     public function addCommandsFromRoutes(Cli $routeMatch, ?string $scriptName = null): Console
     {
-        $commands = $this->getCommandsFromRoutes($routeMatch, $scriptName);
-
-        if (!empty($commands)) {
-            $this->addCommands($commands);
-        }
-
+        $this->commands->addFromRoutes($routeMatch, $scriptName);
         return $this;
     }
 
@@ -585,7 +602,7 @@ class Console
     public function help(?string $command = null, bool $raw = false): string|null
     {
         if ($command !== null) {
-            return $this->commands[$command]?->getHelp();
+            return $this->commands->get($command)?->getHelp();
         } else {
             $this->displayHelp($raw);
             return null;
@@ -1029,6 +1046,60 @@ class Console
     }
 
     /**
+     * Print a table out to the console
+     *
+     * @param  array   $headers
+     * @param  array   $rows
+     * @param  string  $h
+     * @param  ?string $v
+     * @param  ?int    $headerFg
+     * @param  ?int    $headerBg
+     * @param  bool    $newline
+     * @param  bool    $return
+     * @return Console|string
+     */
+    public function table(
+        array $headers, array $rows, string $h = '-', ?string $v = '|',
+        ?int $headerFg = null, ?int $headerBg = null, bool $newline = true, bool $return = false
+    ): Console|string
+    {
+        $table = new Table($headers, $rows, $h, $v);
+        if (($headerFg !== null) || ($headerBg !== null)) {
+            $table->setHeaderColor($headerFg, $headerBg);
+        }
+
+        $output = '';
+        foreach (explode(PHP_EOL, rtrim($table->render(), PHP_EOL)) as $line) {
+            $output .= $this->getIndent() . $line . PHP_EOL;
+        }
+        if ($newline) {
+            $output .= PHP_EOL;
+        }
+
+        if ($return) {
+            return $output;
+        } else {
+            echo $output;
+            return $this;
+        }
+    }
+
+    /**
+     * Create a progress bar
+     *
+     * @param  int     $total
+     * @param  ?string $message
+     * @param  int     $width
+     * @return ProgressBar
+     */
+    public function progressBar(int $total, ?string $message = null, int $width = 28): ProgressBar
+    {
+        $bar = new ProgressBar($total, $message, $width);
+        $bar->setIndent($this->getIndent());
+        return $bar;
+    }
+
+    /**
      * Get input from the prompt
      *
      * @param  string $prompt
@@ -1051,9 +1122,6 @@ class Console
 
         $input = null;
 
-        /**
-         * $_SERVER['X_POP_CONSOLE_INPUT'] is for testing purposes only
-         */
         if ($options !== null) {
             $length = 0;
             foreach ($options as $key => $value) {
@@ -1086,17 +1154,18 @@ class Console
      * @param  bool   $caseSensitive
      * @param  int    $length
      * @param  bool   $withHeaders
+     * @param  bool   $exit
      * @return string
      */
     public function confirm(
         string $message = 'Are you sure?', array $options = ['Y', 'N'], bool $caseSensitive = false,
-        int $length = 500, bool $withHeaders = true
+        int $length = 500, bool $withHeaders = true, bool $exit = true
     ): string
     {
         $message .= ' [' . implode('/', $options) . '] ';
         $response = $this->prompt($message, $options, $caseSensitive, $length, $withHeaders);
 
-        if ((strtolower($response) == 'n') || (strtolower($response) == 'no')) {
+        if (($exit) && ((strtolower($response) == 'n') || (strtolower($response) == 'no'))) {
             echo PHP_EOL;
             exit(127);
         }
@@ -1190,6 +1259,7 @@ class Console
     public function displayHelp(bool $raw = false): void
     {
         $this->response = null;
+        $registry       = $this->commands->all();
         $commands       = [];
         $commandLengths = [];
 
@@ -1197,7 +1267,7 @@ class Console
             $this->response .= $this->formatTemplate($this->header);
         }
 
-        foreach ($this->commands as $key => $command) {
+        foreach ($registry as $key => $command) {
             $name   = $command->getName();
             $params = $command->getParams();
             $length = strlen((string)$name);
@@ -1249,22 +1319,22 @@ class Console
         $i         = 0;
 
         foreach ($commands as $key => $command) {
-            if ($this->commands[$key]->hasHelp()) {
-                $help = $this->commands[$key]->getHelp();
+            if ($registry[$key]->hasHelp()) {
+                $help = $registry[$key]->getHelp();
                 $pad  = ($commandLengths[$key] < $maxLength) ?
                     str_repeat(' ', $maxLength - $commandLengths[$key]) . '    ' : '    ';
 
-                if (strlen((string)$this->commands[$key] . $pad . $help) > $this->wrap) {
+                if (strlen((string)$registry[$key] . $pad . $help) > $this->wrap) {
                     if (!$wrapped) {
                         $this->response .= PHP_EOL;
                     }
 
-                    $offset = $this->wrap - strlen((string)$this->commands[$key] . $pad);
+                    $offset = $this->wrap - strlen((string)$registry[$key] . $pad);
                     $lines  = explode(PHP_EOL, wordwrap($help, $offset, PHP_EOL));
                     foreach ($lines as $i => $line) {
                         $this->response .= ($i == 0) ?
                             $command . $pad . $line . PHP_EOL :
-                            $this->getIndent() . str_repeat(' ', strlen((string)$this->commands[$key])) . $pad . $line . PHP_EOL;
+                            $this->getIndent() . str_repeat(' ', strlen((string)$registry[$key])) . $pad . $line . PHP_EOL;
                     }
 
                     if ($i < count($commands) - 1) {
@@ -1276,7 +1346,7 @@ class Console
                     $wrapped = false;
                 }
             } else {
-                $this->response .= $command . $this->commands[$key]->getHelp() . PHP_EOL;
+                $this->response .= $command . $registry[$key]->getHelp() . PHP_EOL;
             }
             $i++;
         }
@@ -1331,14 +1401,12 @@ class Console
      */
     protected function getPromptInput(string $prompt, int $length = 500, bool $caseSensitive = false): string
     {
-        if (isset($_SERVER['X_POP_CONSOLE_INPUT'])) {
-            $input = ($caseSensitive) ?
-                rtrim($_SERVER['X_POP_CONSOLE_INPUT']) : strtolower(rtrim($_SERVER['X_POP_CONSOLE_INPUT']));
-        } else {
-            $promptInput = fopen('php://stdin', 'r');
-            $input       = fgets($promptInput, strlen((string)$prompt) + $length);
-            $input       = ($caseSensitive) ? rtrim($input) : strtolower(rtrim($input));
-            fclose($promptInput);
+        $stream = $this->inputStream ?? fopen('php://stdin', 'r');
+        $input  = fgets($stream, strlen((string)$prompt) + $length);
+        $input  = ($caseSensitive) ? rtrim((string)$input) : strtolower(rtrim((string)$input));
+
+        if ($this->inputStream === null) {
+            fclose($stream);
         }
 
         return $input;

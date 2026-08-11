@@ -3,5 +3,7 @@ public
 script
 vendor
 kettle
+docs
 .phpunit.result.cache
 .phpunit.cache
+CLAUDE.md

@@ -15,7 +15,11 @@ pop-console
 * [Headers](#headers)
 * [Alerts](#alerts)
 * [Prompt](#prompt)
+* [Table](#table)
+* [Progress Bar](#progress-bar)
+* [Utilities](#utilities)
 * [Commands](#commands)
+* [Command Registry](#command-registry)
 * [Help Screen](#help-screen)
 
 Overview
@@ -46,7 +50,7 @@ Install `pop-console` using Composer.
 Or, require it in your composer.json file
 
     "require": {
-        "popphp/pop-console" : "^4.2.6"
+        "popphp/pop-console" : "^5.0.0"
     }
 
 [Top](#pop-console)
@@ -280,6 +284,17 @@ $console->header('Hello World', '=', 40, 'center');
     ========================================
 ```
 
+The `headerLeft()`, `headerCenter()` and `headerRight()` methods are shortcuts for `header()` with
+the alignment fixed accordingly, and default their `$size` to `'auto'` (wrap width, falling back to
+terminal width):
+
+```php
+use Pop\Console\Console;
+
+$console = new Console();
+$console->headerCenter('Hello World', '=');
+```
+
 [Top](#pop-console)
 
 Alerts
@@ -370,6 +385,131 @@ $console->write('The user said yes.');
     The user said yes.
 ```
 
+### Testing prompts
+
+By default, `prompt()` and `confirm()` read from `php://stdin`. To unit test code that prompts for
+input, inject a stream with `setInputStream()` — one line per expected answer, read the same way
+real stdin is:
+
+```php
+use Pop\Console\Console;
+
+$stream = fopen('php://memory', 'r+');
+fwrite($stream, 'Nick' . PHP_EOL);
+rewind($stream);
+
+$console = new Console();
+$console->setInputStream($stream);
+
+$name = $console->prompt('Please provide your name: '); // 'Nick', no real TTY required
+```
+
+`hasInputStream()` and `getInputStream()` are also available to check/retrieve the injected stream.
+
+[Top](#pop-console)
+
+Table
+-----
+
+The `table()` method renders headers and rows into a bordered grid. Border characters
+are configurable, and the header row can be colorized:
+
+```php
+use Pop\Console\Console;
+use Pop\Console\Color;
+
+$console = new Console();
+
+$console->table(
+    ['Name', 'Status'],
+    [
+        ['kettle', 'active'],
+        ['brew',   'idle'],
+    ],
+    '-', '|', Color::BOLD_GREEN
+);
+```
+
+```text
+    +--------+--------+
+    | Name   | Status |
+    +--------+--------+
+    | kettle | active |
+    | brew   | idle   |
+    +--------+--------+
+```
+
+Passing `null` for the vertical border character omits the column dividers, leaving just
+top/bottom horizontal rules:
+
+```php
+$console->table([], [['a', 'bb'], ['ccc', 'd']], '-', null);
+```
+
+```text
+    ----------
+     a     bb
+     ccc   d
+    ----------
+```
+
+Like `line()`, `header()` and `alertBox()`, passing `true` as the last argument returns the
+rendered string instead of echoing it.
+
+[Top](#pop-console)
+
+Progress Bar
+------------
+
+The `progressBar()` method returns a `Pop\Console\ProgressBar` object for tracking the
+progress of a long-running task. Unlike the other output methods, it doesn't echo-or-return
+a single string — it redraws the same terminal line in place as you advance it:
+
+```php
+use Pop\Console\Console;
+
+$console = new Console();
+$bar     = $console->progressBar(100, 'Processing');
+
+foreach ($items as $i => $item) {
+    // do work
+    $bar->advance();
+}
+
+$bar->finish();
+```
+
+```text
+    Processing [====================>       ]  70% (70/100)
+```
+
+`advance(int $step = 1)` moves the bar forward by `$step`; `setProgress(int $current)` sets
+it to an absolute value. Both clamp to `[0, $total]`. `finish()` forces the bar to 100% and
+prints a trailing newline so subsequent output starts on a fresh line.
+
+[Top](#pop-console)
+
+Utilities
+---------
+
+A few additional helper methods are available on the console object:
+
+```php
+use Pop\Console\Console;
+
+$console = new Console();
+
+$console->isColor();            // Whether the terminal's TERM env var indicates color support
+$console->isWindows();          // Whether the environment is Windows
+$console->getAvailableColors(); // Associative array of all Color::* constant names and values
+$console->clear();              // Clears the terminal screen
+
+$console->getServer();          // The full $_SERVER array captured at construction
+$console->getServer('argv');    // A single $_SERVER key, or null if not set
+$console->getEnv();             // The full $_ENV array captured at construction
+$console->getEnv('APP_ENV');    // A single $_ENV key, or null if not set
+```
+
 [Top](#pop-console)
 
 Commands
@@ -393,7 +533,107 @@ $command2->setHelp('This is the roles help screen');
 $console = new Console();
 $console->addCommand($command1);
 $console->addCommand($command2);
+
+// Or add several at once:
+$console->addCommands([$command1, $command2]);
+
+$console->hasCommand('users');    // true
+$console->getCommand('users');    // the $command1 object, or null if not found
+$console->getCommands();          // ['users' => $command1, 'roles' => $command2]
 ```
+
+A command can also *be* the dispatch target itself, rather than just carrying display metadata.
+`Command` implements `Pop\Dispatch\DispatchableInterface`, the same contract `Pop\Controller\AbstractController`
+implements, so a route can point directly at a `Command` subclass instead of a controller/action pair.
+Subclass `Command` and write a `handle()` method with whatever signature you need — there's no interface
+constraining it, so it can take no arguments, or any number of typed parameters the router resolves:
+
+```php
+use Pop\Console\Command;
+
+class UsersCommand extends Command
+{
+    public function handle(string $id): void
+    {
+        $this->console()->write('Showing user ' . $id);
+    }
+}
+
+$command = new UsersCommand('users', '--list [<id>]', 'This is the users help screen');
+$command->dispatch(null, ['123']); // calls handle('123')
+```
+
+`dispatch()` resolves to `handle()` whenever no explicit action name is given, and always passes
+`$params` through. If a `Command` subclass has no `handle()` method defined, `dispatch()` throws a
+`Pop\Dispatch\Exception`.
+
+A `Command` can optionally carry the `Application` and `Console` objects it needs to do its work,
+injected via the constructor, `setApplication()`/`setConsole()`, or the static `load()`/`loadForApplication()`
+factories:
+
+```php
+use Pop\Console\Command;
+
+$command = Command::load('users', [
+    'params'      => '--list [<id>]',
+    'help'        => 'This is the users help screen',
+    'application' => $application,
+    'console'     => $console
+]);
+
+$command->hasApplication(); // true
+$command->hasConsole();     // true
+```
+
+[Top](#pop-console)
+
+Command Registry
+----------------
+
+The console object doesn't store commands itself — `addCommand()`, `addCommands()`, `getCommands()`,
+`getCommand()`, `hasCommand()`, `getCommandsFromRoutes()` and `addCommandsFromRoutes()` are all thin
+facades over a `Pop\Console\CommandRegistry` instance it holds internally. `CommandRegistry` is a
+plain, `Console`-independent object, so command bookkeeping can be used and tested on its own:
+
+```php
+use Pop\Console\Command;
+use Pop\Console\CommandRegistry;
+
+$registry = new CommandRegistry();
+$registry->add(new Command('users', '--list [<id>]', 'This is the users help screen'));
+
+$registry->has('users');  // true
+$registry->get('users');  // the Command object
+$registry->all();         // ['users' => $command]
+```
+
+### Loading routes from a directory of command classes
+
+For applications that generate one `Command` subclass per file (one command per class, e.g. via a
+scaffolding tool), `CommandRegistry::loadRoutes()` scans a directory and builds a CLI routes config
+array from what it finds — namespace included, so it doesn't need to be passed in:
+
+```php
+use Pop\Console\CommandRegistry;
+
+$routes = CommandRegistry::loadRoutes([
+    'help' => [
+        'controller' => 'MyApp\Command\HelpCommand',
+        'action'     => 'handle',
+    ],
+], __DIR__ . '/src/Command');
+```
+
+Each `.php` file in the directory is checked for a matching, loadable class (namespace parsed from
+the first file, class name from the filename). For each command class found, it's instantiated with
+no constructor arguments and keyed in the resulting array by its own `(string)` cast — so a command
+class is expected to set its own name/params in its constructor. If the command has help text
+(`hasHelp()`), that's carried over too, with a trailing newline appended to the last command's help
+so it doesn't run into whatever's appended after the help screen.
+
+The third argument, `$prepend` (default `true`), controls merge order against the `$routes` passed
+in: when `true`, auto-discovered routes are merged first, so explicit routes with a matching key win;
+pass `false` to reverse that.
 
 [Top](#pop-console)
 
@@ -412,6 +652,13 @@ $console->help();
     roles --list [<id>]    This is the roles help screen
 ```
 
+Passing a command name to `help()` returns just that command's help string instead of printing
+the full screen:
+
+```php
+$console->help('users'); // 'This is the users help screen'
+```
+
 However, the console object has the method `addCommandsFromRoutes()` which works in conjunction
 with a `Pop\Router\Cli\Match` object to automatically generate the command, along with their
 parameters and help strings.
@@ -424,6 +671,11 @@ $this->console->addCommandsFromRoutes($cliRouteMatch, './myapp');
 
 This console will use the CLI route match object and parse out all of the commands
 and make them available for the console object to leverage for the help screen.
+
+For each route, help text is taken from the route config's `'help'` value if one is set. If it isn't,
+and the route's controller implements `Pop\Console\Command\CommandInterface`, the controller is
+instantiated (with no constructor arguments) and its own `getHelp()` is used instead — so a `Command`
+subclass with hardcoded help text doesn't need that help duplicated in the route config.
 
 ### Help colors
 

@@ -31,6 +31,13 @@ class ConsoleTest extends TestCase
         $this->assertIsBool($console->isWindows());
     }
 
+    public function testIsWindows()
+    {
+        $console  = new Console();
+        $expected = (stripos(PHP_OS, 'win') !== false);
+        $this->assertEquals($expected, $console->isWindows());
+    }
+
     public function testSetAndGetHeader()
     {
         $console = new Console();
@@ -745,15 +752,60 @@ HEADER
         $this->assertNotNull($result);
     }
 
-    public function testPrompt()
+    private function createInputStream(string ...$lines): mixed
     {
-        $_SERVER['X_POP_CONSOLE_INPUT'] = 'y';
+        $stream = fopen('php://memory', 'r+');
+        foreach ($lines as $line) {
+            fwrite($stream, $line . PHP_EOL);
+        }
+        rewind($stream);
+        return $stream;
+    }
 
-        ob_start();
+    public function testSetAndGetInputStream()
+    {
+        $console = new Console();
+        $stream  = $this->createInputStream('y');
+        $console->setInputStream($stream);
+
+        $this->assertTrue($console->hasInputStream());
+        $this->assertSame($stream, $console->getInputStream());
+    }
+
+    public function testSetInputStreamWithNonResourceThrowsException()
+    {
+        $this->expectException('Pop\Console\Exception');
+
+        $console = new Console();
+        $console->setInputStream('not a resource');
+    }
+
+    public function testMultiLinePromptSequenceFromSingleStream()
+    {
         $console = new Console();
         if (!$console->hasWidth()) {
             $console->setWidth(160)->setHeight(50);
         }
+        $console->setInputStream($this->createInputStream('x', 'y'));
+
+        ob_start();
+        $first  = $console->prompt('Test prompt: ');
+        $second = $console->prompt('Test prompt: ');
+        ob_get_clean();
+
+        $this->assertEquals('x', $first);
+        $this->assertEquals('y', $second);
+    }
+
+    public function testPrompt()
+    {
+        $console = new Console();
+        if (!$console->hasWidth()) {
+            $console->setWidth(160)->setHeight(50);
+        }
+        $console->setInputStream($this->createInputStream('y'));
+
+        ob_start();
         $answer  = $console->prompt('Test prompt: ');
         $result = ob_get_clean();
 
@@ -762,15 +814,15 @@ HEADER
 
     public function testPromptWithIndent()
     {
-        $_SERVER['X_POP_CONSOLE_INPUT'] = 'y';
-
-        ob_start();
         $console = new Console();
         if (!$console->hasWidth()) {
             $console->setWidth(160)->setHeight(50);
         }
+        $console->setInputStream($this->createInputStream('y'));
         $console->setHeader('Test Header:');
         $console->setIndent('    ');
+
+        ob_start();
         $answer  = $console->prompt('Test prompt: ');
         $result = ob_get_clean();
 
@@ -779,14 +831,14 @@ HEADER
 
     public function testPromptWithHeader()
     {
-        $_SERVER['X_POP_CONSOLE_INPUT'] = 'y';
-
-        ob_start();
         $console = new Console();
         if (!$console->hasWidth()) {
             $console->setWidth(160)->setHeight(50);
         }
+        $console->setInputStream($this->createInputStream('y'));
         $console->setHeader('Test Header:');
+
+        ob_start();
         $answer  = $console->prompt('Test prompt: ');
         $result = ob_get_clean();
 
@@ -795,14 +847,14 @@ HEADER
 
     public function testPromptWithOptions()
     {
-        $_SERVER['X_POP_CONSOLE_INPUT'] = 'n';
-
-        ob_start();
         $console = new Console();
         if (!$console->hasWidth()) {
             $console->setWidth(160)->setHeight(50);
         }
+        $console->setInputStream($this->createInputStream('n'));
         $console->setIndent('    ');
+
+        ob_start();
         $answer  = $console->prompt('Test prompt: ', ['Y', 'N']);
         $result = ob_get_clean();
 
@@ -812,17 +864,164 @@ HEADER
 
     public function testConfirmYes()
     {
-        $_SERVER['X_POP_CONSOLE_INPUT'] = 'y';
-
-        ob_start();
         $console = new Console();
         if (!$console->hasWidth()) {
             $console->setWidth(160)->setHeight(50);
         }
+        $console->setInputStream($this->createInputStream('y'));
+
+        ob_start();
         $answer  = $console->confirm();
         $result = ob_get_clean();
 
         $this->assertEquals('y', $answer);
+    }
+
+    public function testConfirmNoWithExitFalseReturnsResponseWithoutExiting()
+    {
+        $console = new Console();
+        if (!$console->hasWidth()) {
+            $console->setWidth(160)->setHeight(50);
+        }
+        $console->setInputStream($this->createInputStream('n'));
+
+        ob_start();
+        $answer = $console->confirm(exit: false);
+        ob_get_clean();
+
+        $this->assertEquals('n', $answer);
+    }
+
+    public function testPromptRetriesOnInvalidOption()
+    {
+        $console = new Console();
+        if (!$console->hasWidth()) {
+            $console->setWidth(160)->setHeight(50);
+        }
+        $console->setInputStream($this->createInputStream('x', 'y'));
+
+        ob_start();
+        $answer = $console->prompt('Test prompt: ', ['Y', 'N']);
+        $result = ob_get_clean();
+
+        $this->assertEquals('y', $answer);
+        $this->assertEquals(2, substr_count($result, 'Test prompt: '));
+    }
+
+    public function testAppendWithNoWrapOrWidth()
+    {
+        $console = new Console(null);
+        $console->setWidth(0);
+        $this->assertFalse($console->hasWrap());
+        $this->assertFalse($console->hasWidth());
+        $console->append('Hello World');
+
+        ob_start();
+        $console->send();
+        $result = ob_get_clean();
+
+        $this->assertEquals('    Hello World' . PHP_EOL, $result);
+    }
+
+    public function testSendWithHeaderNotYetSent()
+    {
+        $console = new Console();
+        if (!$console->hasWidth()) {
+            $console->setWidth(160)->setHeight(50);
+        }
+        $console->setHeader('My Header');
+        $console->append('Body');
+
+        ob_start();
+        $console->send();
+        $result = ob_get_clean();
+
+        $this->assertStringContainsString('My Header', $result);
+        $this->assertStringContainsString('Body', $result);
+    }
+
+    public function testSendWithFooter()
+    {
+        $console = new Console();
+        if (!$console->hasWidth()) {
+            $console->setWidth(160)->setHeight(50);
+        }
+        $console->setFooter('My Footer');
+        $console->append('Body');
+
+        ob_start();
+        $console->send();
+        $result = ob_get_clean();
+
+        $this->assertStringContainsString('Body', $result);
+        $this->assertStringContainsString('My Footer', $result);
+    }
+
+    public function testGetHeaderFormattedSingleLine()
+    {
+        $console = new Console();
+        if (!$console->hasWidth()) {
+            $console->setWidth(160)->setHeight(50);
+        }
+        $console->setHeader('Single Line Header', false);
+
+        $this->assertEquals('    Single Line Header' . PHP_EOL, $console->getHeader(true));
+    }
+
+    public function testDisplayHelpFourthColor()
+    {
+        $command = new Command('user edit', '<id> --verbose', 'Edit a user.');
+        $console  = new Console(80, '    ');
+        if (!$console->hasWidth()) {
+            $console->setWidth(160)->setHeight(50);
+        }
+        $console->setHelpColors(Color::BOLD_BLUE, Color::YELLOW, Color::BOLD_MAGENTA, Color::BOLD_CYAN);
+        $console->addCommand($command);
+
+        ob_start();
+        $console->help();
+        $result = ob_get_clean();
+
+        $this->assertStringContainsString("\x1b[1;36m--verbose\x1b[0m", $result);
+    }
+
+    protected function runInSubprocess(string $code, string $stdin): array
+    {
+        $autoload       = dirname(__DIR__) . '/vendor/autoload.php';
+        $descriptorSpec = [
+            0 => ['pipe', 'r'],
+            1 => ['pipe', 'w'],
+            2 => ['pipe', 'w'],
+        ];
+
+        $process = proc_open([PHP_BINARY, '-r', $code, $autoload], $descriptorSpec, $pipes);
+
+        fwrite($pipes[0], $stdin);
+        fclose($pipes[0]);
+        $stdout = stream_get_contents($pipes[1]);
+        fclose($pipes[1]);
+        $stderr = stream_get_contents($pipes[2]);
+        fclose($pipes[2]);
+        $exitCode = proc_close($process);
+
+        return [$stdout, $stderr, $exitCode];
+    }
+
+    public function testPromptReadsFromRealStdin()
+    {
+        $code = 'require $argv[1]; $c = new \Pop\Console\Console(); fwrite(STDOUT, $c->prompt("Prompt: "));';
+        [$stdout, $stderr, $exitCode] = $this->runInSubprocess($code, "hello\n");
+
+        $this->assertStringEndsWith('hello', $stdout, $stderr);
+        $this->assertEquals(0, $exitCode, $stderr);
+    }
+
+    public function testConfirmNoExitsWithCode127()
+    {
+        $code = 'require $argv[1]; $c = new \Pop\Console\Console(); $c->confirm();';
+        [$stdout, $stderr, $exitCode] = $this->runInSubprocess($code, "n\n");
+
+        $this->assertEquals(127, $exitCode, $stderr);
     }
 
 }

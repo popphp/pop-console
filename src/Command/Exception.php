@@ -11,10 +11,10 @@
 /**
  * @namespace
  */
-namespace Pop\Console;
+namespace Pop\Console\Command;
 
 /**
- * Console command class
+ * Pop console command exception class
  *
  * @category   Pop
  * @package    Pop\Console
@@ -23,7 +23,4 @@ namespace Pop\Console;
  * @license    https://www.popphp.org/license     New BSD License
  * @version    5.0.0
  */
-class Command extends Command\AbstractCommand
-{
-
-}
+class Exception extends \Exception {}

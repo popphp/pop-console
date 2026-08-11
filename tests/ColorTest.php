@@ -22,4 +22,10 @@ class ColorTest extends TestCase
         $this->assertStringContainsString('Hello World', $string);
     }
 
+    public function testRawColor()
+    {
+        $string = Color::colorize('Hello World', Color::BOLD_BLUE, Color::RED, true);
+        $this->assertEquals('Hello World', $string);
+    }
+
 }
