@@ -127,14 +127,14 @@ abstract class AbstractCommand extends Dispatch\AbstractDispatcher implements Di
     /**
      * Load the command for an application
      *
-     * @param  Application $application
-     * @param  Console     $console
-     * @param  ?string     $name
-     * @param  array       $config
+     * @param  ?Application $application
+     * @param  ?Console     $console
+     * @param  ?string      $name
+     * @param  array        $config
      * @return static
      */
     public static function loadForApplication(
-        Application $application, Console $console, ?string $name = null, array $config = []
+        ?Application $application = null, ?Console $console = null, ?string $name = null, array $config = []
     ): static
     {
         $params     = $config['params'] ?? null;
