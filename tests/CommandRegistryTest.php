@@ -14,7 +14,7 @@ class CommandRegistryTest extends TestCase
     public function testAddAndGet()
     {
         $registry = new CommandRegistry();
-        $registry->add(new Command('help'));
+        $registry->add(new Command(name: 'help'));
 
         $this->assertTrue($registry->has('help'));
         $this->assertEquals('help', $registry->get('help')->getName());
@@ -30,10 +30,10 @@ class CommandRegistryTest extends TestCase
     public function testAddAllAndAll()
     {
         $registry = new CommandRegistry();
-        $registry->add(new Command('help'));
+        $registry->add(new Command(name: 'help'));
         $registry->addAll([
-            new Command('list'),
-            new Command('print')
+            new Command(name: 'list'),
+            new Command(name: 'print')
         ]);
 
         $this->assertCount(3, $registry->all());
@@ -44,8 +44,8 @@ class CommandRegistryTest extends TestCase
     public function testAddOverwritesExistingCommandWithSameName()
     {
         $registry = new CommandRegistry();
-        $registry->add(new Command('help', null, 'First'));
-        $registry->add(new Command('help', null, 'Second'));
+        $registry->add(new Command(name: 'help', help: 'First'));
+        $registry->add(new Command(name: 'help', help: 'Second'));
 
         $this->assertCount(1, $registry->all());
         $this->assertEquals('Second', $registry->get('help')->getHelp());

@@ -522,11 +522,11 @@ and add the command to the console object:
 use Pop\Console\Console;
 use Pop\Console\Command;
 
-$command1 = new Command('users');
+$command1 = new Command(name: 'users');
 $command1->setParams('--list [<id>]');
 $command1->setHelp('This is the users help screen');
 
-$command2 = new Command('roles');
+$command2 = new Command(name: 'roles');
 $command2->setParams('--list [<id>]');
 $command2->setHelp('This is the roles help screen');
 
@@ -559,7 +559,7 @@ class UsersCommand extends Command
     }
 }
 
-$command = new UsersCommand('users', '--list [<id>]', 'This is the users help screen');
+$command = new UsersCommand(name: 'users', params: '--list [<id>]', help: 'This is the users help screen');
 $command->dispatch(null, ['123']); // calls handle('123')
 ```
 
@@ -567,19 +567,18 @@ $command->dispatch(null, ['123']); // calls handle('123')
 `$params` through. If a `Command` subclass has no `handle()` method defined, `dispatch()` throws a
 `Pop\Dispatch\Exception`.
 
-A `Command` can optionally carry the `Application` and `Console` objects it needs to do its work,
-injected via the constructor, `setApplication()`/`setConsole()`, or the static `load()`/`loadForApplication()`
-factories:
+A `Command` carries the `Application` and `Console` objects it needs to do its work via
+`Pop\Dispatch\ConsoleTrait`, the same trait a full `Pop\Controller\AbstractController` uses — which is
+why they're the constructor's first two parameters, ahead of `name`/`params`/`help`, and can also be
+set after the fact with `setApplication()`/`setConsole()`. `Console` defaults to a fresh `new Console(120)`
+instance when not supplied, so `hasConsole()` is `true` out of the box; `Application` stays `null` until
+explicitly provided:
 
 ```php
 use Pop\Console\Command;
+use Pop\Console\Console;
 
-$command = Command::load('users', [
-    'params'      => '--list [<id>]',
-    'help'        => 'This is the users help screen',
-    'application' => $application,
-    'console'     => $console
-]);
+$command = new Command($application, new Console(120), 'users', '--list [<id>]', 'This is the users help screen');
 
 $command->hasApplication(); // true
 $command->hasConsole();     // true
@@ -600,7 +599,7 @@ use Pop\Console\Command;
 use Pop\Console\CommandRegistry;
 
 $registry = new CommandRegistry();
-$registry->add(new Command('users', '--list [<id>]', 'This is the users help screen'));
+$registry->add(new Command(name: 'users', params: '--list [<id>]', help: 'This is the users help screen'));
 
 $registry->has('users');  // true
 $registry->get('users');  // the Command object

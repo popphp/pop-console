@@ -26,13 +26,22 @@ class AbstractCommandTest extends TestCase
     {
         $application = new Application();
         $console     = new Console(80);
-        $command     = new class('hello', '-v', 'Hello World', $application, $console) extends AbstractCommand {};
+        $command     = new class($application, $console, 'hello', '-v', 'Hello World') extends AbstractCommand {};
 
         $this->assertEquals('hello', $command->getName());
         $this->assertEquals('-v', $command->getParams());
         $this->assertEquals('Hello World', $command->getHelp());
         $this->assertSame($application, $command->getApplication());
         $this->assertSame($console, $command->getConsole());
+    }
+
+    public function testConstructorDefaultsConsoleToNewInstance()
+    {
+        $command = new class extends AbstractCommand {};
+
+        $this->assertTrue($command->hasConsole());
+        $this->assertInstanceOf('Pop\Console\Console', $command->getConsole());
+        $this->assertFalse($command->hasApplication());
     }
 
     public function testFluentSettersReturnSameConcreteInstance()

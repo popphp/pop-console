@@ -9,7 +9,7 @@ class FooCommand extends AbstractCommand
 
     public function __construct()
     {
-        parent::__construct('foo:bar', '<id>', 'Foo bar help');
+        parent::__construct(name: 'foo:bar', params: '<id>', help: 'Foo bar help');
     }
 
 }

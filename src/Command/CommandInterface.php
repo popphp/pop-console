@@ -13,9 +13,6 @@
  */
 namespace Pop\Console\Command;
 
-use Pop\Application;
-use Pop\Console\Console;
-
 /**
  * Console command interface
  *
@@ -28,36 +25,6 @@ use Pop\Console\Console;
  */
 interface CommandInterface
 {
-
-    /**
-     * Get application object (alias method)
-     *
-     * @return ?Application
-     */
-    public function application(): ?Application;
-
-    /**
-     * Get console object (alias method)
-     *
-     * @return ?Console
-     */
-    public function console(): ?Console;
-
-    /**
-     * Set the command application
-     *
-     * @param  Application $application
-     * @return static
-     */
-    public function setApplication(Application $application): static;
-
-    /**
-     * Set the command console
-     *
-     * @param  Console $console
-     * @return static
-     */
-    public function setConsole(Console $console): static;
 
     /**
      * Set the command name
@@ -84,20 +51,6 @@ interface CommandInterface
     public function setHelp(string $help): static;
 
     /**
-     * Get application object
-     *
-     * @return ?Application
-     */
-    public function getApplication(): ?Application;
-
-    /**
-     * Get console object
-     *
-     * @return ?Console
-     */
-    public function getConsole(): ?Console;
-
-    /**
      * Get the command name
      *
      * @return ?string
@@ -117,20 +70,6 @@ interface CommandInterface
      * @return ?string
      */
     public function getHelp(): ?string;
-
-    /**
-     * Determine if the command has an application
-     *
-     * @return bool
-     */
-    public function hasApplication(): bool;
-
-    /**
-     * Determine if the command has a console
-     *
-     * @return bool
-     */
-    public function hasConsole(): bool;
 
     /**
      * Determine if the command has name

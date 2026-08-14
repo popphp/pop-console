@@ -126,7 +126,7 @@ class CommandRegistry
                 $commandName = $scriptName . ' ' . $commandName;
             }
 
-            $commandsToAdd[] = new Command($commandName, $params, $help);
+            $commandsToAdd[] = new Command(name: $commandName, params: $params, help: $help);
         }
 
         return $commandsToAdd;

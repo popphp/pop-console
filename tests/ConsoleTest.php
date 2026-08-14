@@ -118,7 +118,7 @@ class ConsoleTest extends TestCase
         if (!$console->hasWidth()) {
             $console->setWidth(160)->setHeight(50);
         }
-        $console->addCommand(new Command('help'));
+        $console->addCommand(new Command(name: 'help'));
         $this->assertEquals('help', $console->getCommand('help')->getName());
     }
 
@@ -152,10 +152,10 @@ class ConsoleTest extends TestCase
         if (!$console->hasWidth()) {
             $console->setWidth(160)->setHeight(50);
         }
-        $console->addCommand(new Command('help'));
+        $console->addCommand(new Command(name: 'help'));
         $console->addCommands([
-            new Command('list'),
-            new Command('print')
+            new Command(name: 'list'),
+            new Command(name: 'print')
         ]);
         $this->assertTrue($console->hasCommand('help'));
         $this->assertEquals('help', $console->getCommand('help')->getName());
@@ -170,17 +170,17 @@ class ConsoleTest extends TestCase
         if (!$console->hasWidth()) {
             $console->setWidth(160)->setHeight(50);
         }
-        $console->addCommand(new Command('help'));
+        $console->addCommand(new Command(name: 'help'));
         $console->addCommands([
-            new Command('list'),
-            new Command('print')
+            new Command(name: 'list'),
+            new Command(name: 'print')
         ]);
         $this->assertEquals(3, count($console->getCommands()));
     }
 
     public function testGetHelp()
     {
-        $command = new Command('hello');
+        $command = new Command(name: 'hello');
         $command->setHelp('Hello World');
         $console = new Console();
         if (!$console->hasWidth()) {
@@ -192,7 +192,7 @@ class ConsoleTest extends TestCase
 
     public function testDisplayHelp()
     {
-        $command = new Command('hello', '-v', 'This is the help');
+        $command = new Command(name: 'hello', params: '-v', help: 'This is the help');
         $console = new Console(80, '    ');
         if (!$console->hasWidth()) {
             $console->setWidth(160)->setHeight(50);
@@ -208,11 +208,11 @@ class ConsoleTest extends TestCase
 
     public function testDisplayHelpColors()
     {
-        $userList   = new Command('user list', '-v --option=123 [<id>]', 'This is the users list command.');
-        $userAdd    = new Command('user', '--name=');
-        $userEdit   = new Command('user edit', '<id>', 'This is the users edit command.');
-        $userDelete = new Command('user delete', '<id>', 'This is the users delete command. This is the users delete command. This is the users delete command. This is the users delete command. This is the users delete command.');
-        $userShow   = new Command('user show', '-v --option=123 [<id>]', 'This is the users list command.');
+        $userList   = new Command(name: 'user list', params: '-v --option=123 [<id>]', help: 'This is the users list command.');
+        $userAdd    = new Command(name: 'user', params: '--name=');
+        $userEdit   = new Command(name: 'user edit', params: '<id>', help: 'This is the users edit command.');
+        $userDelete = new Command(name: 'user delete', params: '<id>', help: 'This is the users delete command. This is the users delete command. This is the users delete command. This is the users delete command. This is the users delete command.');
+        $userShow   = new Command(name: 'user show', params: '-v --option=123 [<id>]', help: 'This is the users list command.');
 
         $console = new Console(80, '    ');
         if (!$console->hasWidth()) {
@@ -970,7 +970,7 @@ HEADER
 
     public function testDisplayHelpFourthColor()
     {
-        $command = new Command('user edit', '<id> --verbose', 'Edit a user.');
+        $command = new Command(name: 'user edit', params: '<id> --verbose', help: 'Edit a user.');
         $console  = new Console(80, '    ');
         if (!$console->hasWidth()) {
             $console->setWidth(160)->setHeight(50);

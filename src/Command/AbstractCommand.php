@@ -31,16 +31,11 @@ abstract class AbstractCommand extends Dispatch\AbstractDispatcher implements Di
 {
 
     /**
-     * Application object
-     * @var ?Application
+     * Traits
      */
-    protected ?Application $application = null;
-
-    /**
-     * Console object
-     * @var ?Console
-     */
-    protected ?Console $console = null;
+    use Dispatch\ConsoleTrait {
+        Dispatch\ConsoleTrait::__construct as private traitConstruct;
+    }
 
     /**
      * Command name
@@ -63,17 +58,19 @@ abstract class AbstractCommand extends Dispatch\AbstractDispatcher implements Di
     /**
      * Instantiate the command object
      *
+     * @param ?Application $application
+     * @param Console      $console
      * @param ?string      $name
      * @param ?string      $params
      * @param ?string      $help
-     * @param ?Application $application
-     * @param ?Console     $console
      */
     public function __construct(
-        ?string $name = null, ?string $params = null, ?string $help = null,
-        ?Application $application = null, ?Console $console = null
+        ?Application $application = null, Console $console = new Console(120),
+        ?string $name = null, ?string $params = null, ?string $help = null
     )
     {
+        $this->traitConstruct($application, $console);
+
         if ($name !== null) {
             $this->setName($name);
         }
@@ -82,12 +79,6 @@ abstract class AbstractCommand extends Dispatch\AbstractDispatcher implements Di
         }
         if ($help !== null) {
             $this->setHelp($help);
-        }
-        if ($application !== null) {
-            $this->setApplication($application);
-        }
-        if ($console !== null) {
-            $this->setConsole($console);
         }
     }
 
@@ -105,86 +96,6 @@ abstract class AbstractCommand extends Dispatch\AbstractDispatcher implements Di
     public function dispatch(?string $action = null, ?array $params = null): void
     {
         parent::dispatch($action ?? 'handle', $params);
-    }
-
-    /**
-     * Load the command
-     *
-     * @param  ?string $name
-     * @param  array   $config
-     * @return static
-     */
-    public static function load(?string $name = null, array $config = []): static
-    {
-        $params      = $config['params'] ?? null;
-        $help        = $config['help'] ?? null;
-        $application = $config['application'] ?? null;
-        $console     = $config['console'] ?? null;
-
-        return new static($name, $params, $help, $application, $console);
-    }
-
-    /**
-     * Load the command for an application
-     *
-     * @param  ?Application $application
-     * @param  ?Console     $console
-     * @param  ?string      $name
-     * @param  array        $config
-     * @return static
-     */
-    public static function loadForApplication(
-        ?Application $application = null, ?Console $console = null, ?string $name = null, array $config = []
-    ): static
-    {
-        $params     = $config['params'] ?? null;
-        $help       = $config['help'] ?? null;
-
-        return new static($name, $params, $help, $application, $console);
-    }
-
-    /**
-     * Get application object (alias method)
-     *
-     * @return ?Application
-     */
-    public function application(): ?Application
-    {
-        return $this->application;
-    }
-
-    /**
-     * Get console object (alias method)
-     *
-     * @return ?Console
-     */
-    public function console(): ?Console
-    {
-        return $this->console;
-    }
-
-    /**
-     * Set the command application
-     *
-     * @param  Application $application
-     * @return static
-     */
-    public function setApplication(Application $application): static
-    {
-        $this->application = $application;
-        return $this;
-    }
-
-    /**
-     * Set the command console
-     *
-     * @param  Console $console
-     * @return static
-     */
-    public function setConsole(Console $console): static
-    {
-        $this->console = $console;
-        return $this;
     }
 
     /**
@@ -224,26 +135,6 @@ abstract class AbstractCommand extends Dispatch\AbstractDispatcher implements Di
     }
 
     /**
-     * Get application object
-     *
-     * @return ?Application
-     */
-    public function getApplication(): ?Application
-    {
-        return $this->application;
-    }
-
-    /**
-     * Get console object
-     *
-     * @return ?Console
-     */
-    public function getConsole(): ?Console
-    {
-        return $this->console;
-    }
-
-    /**
      * Get the command name
      *
      * @return ?string
@@ -271,26 +162,6 @@ abstract class AbstractCommand extends Dispatch\AbstractDispatcher implements Di
     public function getHelp(): ?string
     {
         return $this->help;
-    }
-
-    /**
-     * Determine if the command has an application
-     *
-     * @return bool
-     */
-    public function hasApplication(): bool
-    {
-        return ($this->application !== null);
-    }
-
-    /**
-     * Determine if the command has a console
-     *
-     * @return bool
-     */
-    public function hasConsole(): bool
-    {
-        return ($this->console !== null);
     }
 
     /**

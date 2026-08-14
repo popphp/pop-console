@@ -9,7 +9,7 @@ class BazCommand extends AbstractCommand
 
     public function __construct()
     {
-        parent::__construct('baz:qux', null, 'Baz qux help');
+        parent::__construct(name: 'baz:qux', help: 'Baz qux help');
     }
 
 }
