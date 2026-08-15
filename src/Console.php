@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 /**
  * Pop PHP Framework (https://www.popphp.org/)
  *
@@ -129,8 +130,8 @@ class Console
                 $width  = exec('tput cols');
             }
             if (!empty($height) && !empty($width)) {
-                $this->setHeight($height);
-                $this->setWidth($width);
+                $this->setHeight((int)$height);
+                $this->setWidth((int)$width);
             }
         }
 
@@ -144,8 +145,8 @@ class Console
             $this->setMargin((int)$margin);
         }
 
-        $this->server   = (isset($_SERVER)) ? $_SERVER : [];
-        $this->env      = (isset($_ENV))    ? $_ENV    : [];
+        $this->server   = $_SERVER;
+        $this->env      = $_ENV;
         $this->commands = new CommandRegistry();
     }
 
@@ -1291,18 +1292,16 @@ class Console
             if ($params !== null) {
                 $length += (strlen((string)$params) + 1);
                 if (str_contains($params, '-') && str_contains($params, '<')) {
-                    $pars = explode(' ', $params);
-                    if (count($pars) > 0) {
-                        $optionFirst = str_contains($pars[0], '-');
-                        $colorIndex  = 2;
-                        foreach ($pars as $p) {
-                            if (isset($this->helpColors[3]) &&
-                                (($optionFirst) && str_contains($p, '<')) || ((!$optionFirst) && str_contains($p, '-'))) {
-                                $colorIndex = 3;
-                            }
-                            $name .= ' ' . ((isset($this->helpColors[$colorIndex])) ?
-                                    Color::colorize($p, $this->helpColors[$colorIndex], null, $raw) : $p);
+                    $pars        = explode(' ', $params);
+                    $optionFirst = str_contains($pars[0], '-');
+                    $colorIndex  = 2;
+                    foreach ($pars as $p) {
+                        if (isset($this->helpColors[3]) &&
+                            (($optionFirst) && str_contains($p, '<')) || ((!$optionFirst) && str_contains($p, '-'))) {
+                            $colorIndex = 3;
                         }
+                        $name .= ' ' . ((isset($this->helpColors[$colorIndex])) ?
+                                Color::colorize($p, $this->helpColors[$colorIndex], null, $raw) : $p);
                     }
                 } else {
                     $name .= ' ' . ((isset($this->helpColors[2])) ?
@@ -1425,7 +1424,7 @@ class Console
         $pad = 0;
 
         if ($align == 'center') {
-            $pad = round(($size - strlen($string)) / 2);
+            $pad = (int)round(($size - strlen($string)) / 2);
         } else if ($align == 'right') {
             $pad = $size - strlen($string);
         }
