@@ -94,6 +94,12 @@ class ProgressBar
     protected bool $finished = false;
 
     /**
+     * Last rendered line, so redraws are skipped when the visible output hasn't changed
+     * @var ?string
+     */
+    protected ?string $lastLine = null;
+
+    /**
      * Instantiate the progress bar object
      *
      * @param  int     $total
@@ -253,7 +259,11 @@ class ProgressBar
      */
     protected function render(): void
     {
-        echo "\r" . $this->buildLine();
+        $line = $this->buildLine();
+        if ($line !== $this->lastLine) {
+            echo "\r" . $line;
+            $this->lastLine = $line;
+        }
     }
 
     /**

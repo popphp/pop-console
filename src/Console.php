@@ -109,6 +109,13 @@ class Console
     protected mixed $inputStream = null;
 
     /**
+     * Detected terminal size, cached per-process so the stty/tput subprocess
+     * probe only ever runs once no matter how many Console instances are built
+     * @var ?array
+     */
+    protected static ?array $detectedTerminalSize = null;
+
+    /**
      * Instantiate a new console object
      *
      * @param  ?int            $wrap
@@ -116,19 +123,12 @@ class Console
      */
     public function __construct(?int $wrap = 80, int|string|null $margin = 4)
     {
-        $height = null;
-        $width  = null;
-
         if (function_exists('exec') && stream_isatty(STDIN)) {
-            if (!empty(exec('which stty'))) {
-                $sttySize = exec('stty size');
-                if (!empty($sttySize) && str_contains($sttySize, ' ')) {
-                    [$height, $width] = explode(' ', $sttySize, 2);
-                }
-            } else if (!empty(exec('which tput'))) {
-                $height = exec('tput lines');
-                $width  = exec('tput cols');
+            if (self::$detectedTerminalSize === null) {
+                self::$detectedTerminalSize = self::detectTerminalSize();
             }
+
+            [$height, $width] = self::$detectedTerminalSize;
             if (!empty($height) && !empty($width)) {
                 $this->setHeight((int)$height);
                 $this->setWidth((int)$width);
@@ -148,6 +148,29 @@ class Console
         $this->server   = $_SERVER;
         $this->env      = $_ENV;
         $this->commands = new CommandRegistry();
+    }
+
+    /**
+     * Detect the terminal height/width via stty or tput
+     *
+     * @return array
+     */
+    protected static function detectTerminalSize(): array
+    {
+        $height = null;
+        $width  = null;
+
+        if (!empty(exec('which stty'))) {
+            $sttySize = exec('stty size');
+            if (!empty($sttySize) && str_contains($sttySize, ' ')) {
+                [$height, $width] = explode(' ', $sttySize, 2);
+            }
+        } else if (!empty(exec('which tput'))) {
+            $height = exec('tput lines');
+            $width  = exec('tput cols');
+        }
+
+        return [$height, $width];
     }
 
     /**
@@ -646,6 +669,68 @@ class Console
     }
 
     /**
+     * Resolve an explicit/auto/null $size against the console's wrap/width,
+     * shared by header()/alert()/alertBox() so their size-resolution precedence
+     * stays identical
+     *
+     * @param  string          $text
+     * @param  int|string|null $size
+     * @param  int             $fallbackPadding
+     * @return int|string
+     */
+    protected function resolveSize(string $text, int|string|null $size, int $fallbackPadding = 0): int|string
+    {
+        if ($size === null) {
+            if (!empty($this->wrap) && (strlen($text) > $this->wrap)) {
+                $size = $this->wrap;
+            } else if (!empty($this->width) && (strlen($text) > $this->width)) {
+                $size = $this->width - ((int)$this->margin * 2);
+            } else {
+                $size = strlen($text) + $fallbackPadding;
+            }
+        } else if ($size == 'auto') {
+            if (!empty($this->wrap)) {
+                $size = $this->wrap;
+            } else if (!empty($this->width)) {
+                $size = $this->width - ((int)$this->margin * 2);
+            }
+        }
+
+        return $size;
+    }
+
+    /**
+     * Word-wrap and align a message into padded lines of $size width, shared
+     * by alert()/alertBox()
+     *
+     * @param  string $message
+     * @param  int    $size
+     * @param  string $align
+     * @param  int    $innerPad
+     * @return array
+     */
+    protected function buildAlignedMessageLines(string $message, int $size, string $align, int $innerPad): array
+    {
+        $innerSize    = $size - ($innerPad * 2);
+        $messageLines = [];
+        $lines        = (strlen($message) > $innerSize) ?
+            explode(PHP_EOL, wordwrap($message, $innerSize, PHP_EOL)) : [$message];
+
+        foreach ($lines as $line) {
+            $pad = $this->calculatePad($line, $size, $align);
+            if ($align == 'center') {
+                $messageLines[] = str_repeat(' ', $pad) . $line . str_repeat(' ', ($size - strlen($line) - $pad));
+            } else if ($align == 'left') {
+                $messageLines[] = str_repeat(' ', $innerPad) . $line . str_repeat(' ', ($size - strlen($line) - $pad - $innerPad));
+            } else if ($align == 'right') {
+                $messageLines[] = str_repeat(' ', ($size - strlen($line) - $innerPad)) . $line . str_repeat(' ', $innerPad);
+            }
+        }
+
+        return $messageLines;
+    }
+
+    /**
      * Print a header
      *
      * @param  string          $string
@@ -662,22 +747,7 @@ class Console
     ): Console|string
     {
         $header = '';
-
-        if ($size === null) {
-            if (!empty($this->wrap) && (strlen($string) > $this->wrap)) {
-                $size = $this->wrap;
-            } else if (!empty($this->width) && (strlen($string) > $this->width)) {
-                $size = $this->width - ((int)$this->margin * 2);
-            } else {
-                $size = strlen($string);
-            }
-        } else if ($size == 'auto') {
-            if (!empty($this->wrap)) {
-                $size = $this->wrap;
-            } else if (!empty($this->width)) {
-                $size = $this->width - ((int)$this->margin * 2);
-            }
-        }
+        $size   = $this->resolveSize($string, $size);
 
         if (strlen($string) > $size) {
             $lines = explode(PHP_EOL, wordwrap($string, $size, PHP_EOL));
@@ -773,37 +843,8 @@ class Console
         int $innerPad = 4, bool $newline = true, bool $return = false
     ): Console|string
     {
-        if ($size === null) {
-            if (!empty($this->wrap) && (strlen($message) > $this->wrap)) {
-                $size = $this->wrap;
-            } else if (!empty($this->width) && (strlen($message) > $this->width)) {
-                $size = $this->width - ((int)$this->margin * 2);
-            } else {
-                $size = strlen($message) + ($innerPad * 2);
-            }
-        } else if ($size == 'auto') {
-            if (!empty($this->wrap)) {
-                $size = $this->wrap;
-            } else if (!empty($this->width)) {
-                $size = $this->width - ((int)$this->margin * 2);
-            }
-        }
-
-        $innerSize    = $size - ($innerPad * 2);
-        $messageLines = [];
-        $lines        = (strlen($message) > $innerSize) ?
-            explode(PHP_EOL, wordwrap($message, $innerSize, PHP_EOL)) : [$message];
-
-        foreach ($lines as $line) {
-            $pad = $this->calculatePad($line, $size, $align);
-            if ($align == 'center') {
-                $messageLines[] = str_repeat(' ', $pad) . $line . str_repeat(' ', ($size - strlen($line) - $pad));
-            } else if ($align == 'left') {
-                $messageLines[] = str_repeat(' ', $innerPad) . $line . str_repeat(' ', ($size - strlen($line) - $pad - $innerPad));
-            } else if ($align == 'right') {
-                $messageLines[] = str_repeat(' ', ($size - strlen($line) - $innerPad)) . $line . str_repeat(' ', $innerPad);
-            }
-        }
+        $size         = $this->resolveSize($message, $size, $innerPad * 2);
+        $messageLines = $this->buildAlignedMessageLines($message, $size, $align, $innerPad);
 
         $alert = $this->getIndent() . Color::colorize(str_repeat(' ', $size), $fg, $bg) . PHP_EOL;
         foreach ($messageLines as $messageLine) {
@@ -840,37 +881,8 @@ class Console
         string $align = 'center', int $innerPad = 4, bool $newline = true, bool $return = false
     ): Console|string
     {
-        if ($size === null) {
-            if (!empty($this->wrap) && (strlen($message) > $this->wrap)) {
-                $size = $this->wrap;
-            } else if (!empty($this->width) && (strlen($message) > $this->width)) {
-                $size = $this->width - ((int)$this->margin * 2);
-            } else {
-                $size = strlen($message) + ($innerPad * 2);
-            }
-        } else if ($size == 'auto') {
-            if (!empty($this->wrap)) {
-                $size = $this->wrap;
-            } else if (!empty($this->width)) {
-                $size = $this->width - ((int)$this->margin * 2);
-            }
-        }
-
-        $innerSize    = $size - ($innerPad * 2);
-        $messageLines = [];
-        $lines        = (strlen($message) > $innerSize) ?
-            explode(PHP_EOL, wordwrap($message, $innerSize, PHP_EOL)) : [$message];
-
-        foreach ($lines as $line) {
-            $pad = $this->calculatePad($line, $size, $align);
-            if ($align == 'center') {
-                $messageLines[] = str_repeat(' ', $pad) . $line . str_repeat(' ', ($size - strlen($line) - $pad));
-            } else if ($align == 'left') {
-                $messageLines[] = str_repeat(' ', $innerPad) . $line . str_repeat(' ', ($size - strlen($line) - $pad - $innerPad));
-            } else if ($align == 'right') {
-                $messageLines[] = str_repeat(' ', ($size - strlen($line) - $innerPad)) . $line . str_repeat(' ', $innerPad);
-            }
-        }
+        $size         = $this->resolveSize($message, $size, $innerPad * 2);
+        $messageLines = $this->buildAlignedMessageLines($message, $size, $align, $innerPad);
 
         $alert  = $this->getIndent() . str_repeat($h, $size) . PHP_EOL;
         $alert .= $this->getIndent() . $v . str_repeat(' ', $size - 2) . $v . PHP_EOL;
@@ -1269,84 +1281,21 @@ class Console
         }
 
         foreach ($registry as $key => $command) {
-            $name   = $command->getName();
-            $params = $command->getParams();
-            $length = strlen((string)$name);
-
-            if (count($this->helpColors) > 0) {
-                if (str_contains((string)$name, ' ')) {
-                    $name1 = substr($name, 0, strpos($name, ' '));
-                    $name2 = substr($name, strpos($name, ' ') + 1);
-                    if (isset($this->helpColors[0])) {
-                        $name1 = Color::colorize($name1, $this->helpColors[0], null, $raw);
-                    }
-                    if (isset($this->helpColors[1])) {
-                        $name2 = Color::colorize($name2, $this->helpColors[1], null, $raw);
-                    }
-                    $name = $name1 . ' ' . $name2;
-                } else if (isset($this->helpColors[0])){
-                    $name = Color::colorize($name, $this->helpColors[0], null, $raw);
-                }
-            }
-
-            if ($params !== null) {
-                $length += (strlen((string)$params) + 1);
-                if (str_contains($params, '-') && str_contains($params, '<')) {
-                    $pars        = explode(' ', $params);
-                    $optionFirst = str_contains($pars[0], '-');
-                    $colorIndex  = 2;
-                    foreach ($pars as $p) {
-                        if (isset($this->helpColors[3]) &&
-                            (($optionFirst) && str_contains($p, '<')) || ((!$optionFirst) && str_contains($p, '-'))) {
-                            $colorIndex = 3;
-                        }
-                        $name .= ' ' . ((isset($this->helpColors[$colorIndex])) ?
-                                Color::colorize($p, $this->helpColors[$colorIndex], null, $raw) : $p);
-                    }
-                } else {
-                    $name .= ' ' . ((isset($this->helpColors[2])) ?
-                            Color::colorize($params, $this->helpColors[2], null, $raw) : $params);
-                }
-            }
-
-            $commands[$key]       = $this->getIndent() . $name;
+            [$label, $length]     = $this->formatHelpLabel($command, $raw);
+            $commands[$key]       = $this->getIndent() . $label;
             $commandLengths[$key] = $length;
         }
 
         $maxLength = max($commandLengths);
         $wrapped   = false;
+        $total     = count($commands);
         $i         = 0;
 
         foreach ($commands as $key => $command) {
-            if ($registry[$key]->hasHelp()) {
-                $help = $registry[$key]->getHelp();
-                $pad  = ($commandLengths[$key] < $maxLength) ?
-                    str_repeat(' ', $maxLength - $commandLengths[$key]) . '    ' : '    ';
-
-                if (strlen((string)$registry[$key] . $pad . $help) > $this->wrap) {
-                    if (!$wrapped) {
-                        $this->response .= PHP_EOL;
-                    }
-
-                    $offset = $this->wrap - strlen((string)$registry[$key] . $pad);
-                    $lines  = explode(PHP_EOL, wordwrap($help, $offset, PHP_EOL));
-                    foreach ($lines as $i => $line) {
-                        $this->response .= ($i == 0) ?
-                            $command . $pad . $line . PHP_EOL :
-                            $this->getIndent() . str_repeat(' ', strlen((string)$registry[$key])) . $pad . $line . PHP_EOL;
-                    }
-
-                    if ($i < count($commands) - 1) {
-                        $this->response .= PHP_EOL;
-                    }
-                    $wrapped = true;
-                } else {
-                    $this->response .= $command . $pad . $help . PHP_EOL;
-                    $wrapped = false;
-                }
-            } else {
-                $this->response .= $command . $registry[$key]->getHelp() . PHP_EOL;
-            }
+            [$row, $wrapped] = $this->buildHelpRow(
+                $registry[$key], $command, $commandLengths[$key], $maxLength, ($i == $total - 1), $wrapped
+            );
+            $this->response .= $row;
             $i++;
         }
 
@@ -1355,6 +1304,129 @@ class Console
         }
 
         $this->send(false);
+    }
+
+    /**
+     * Format a registered command's name/params into a colorized help label
+     *
+     * @param  Command\CommandInterface $command
+     * @param  bool                     $raw
+     * @return array
+     */
+    protected function formatHelpLabel(Command\CommandInterface $command, bool $raw): array
+    {
+        $name   = $command->getName();
+        $params = $command->getParams();
+        $length = strlen((string)$name);
+
+        if (count($this->helpColors) > 0) {
+            $name = $this->colorizeHelpName((string)$name, $raw);
+        }
+
+        if ($params !== null) {
+            $length += (strlen((string)$params) + 1);
+            $name   .= $this->colorizeHelpParams($params, $raw);
+        }
+
+        return [$name, $length];
+    }
+
+    /**
+     * Colorize a command name (and its sub-name, if space-separated) for the help screen
+     *
+     * @param  string $name
+     * @param  bool   $raw
+     * @return string
+     */
+    protected function colorizeHelpName(string $name, bool $raw): string
+    {
+        if (str_contains($name, ' ')) {
+            $name1 = substr($name, 0, strpos($name, ' '));
+            $name2 = substr($name, strpos($name, ' ') + 1);
+            if (isset($this->helpColors[0])) {
+                $name1 = Color::colorize($name1, $this->helpColors[0], null, $raw);
+            }
+            if (isset($this->helpColors[1])) {
+                $name2 = Color::colorize($name2, $this->helpColors[1], null, $raw);
+            }
+            return $name1 . ' ' . $name2;
+        } else if (isset($this->helpColors[0])) {
+            return Color::colorize($name, $this->helpColors[0], null, $raw);
+        }
+
+        return $name;
+    }
+
+    /**
+     * Colorize a command's params for the help screen
+     *
+     * @param  string $params
+     * @param  bool   $raw
+     * @return string
+     */
+    protected function colorizeHelpParams(string $params, bool $raw): string
+    {
+        if (str_contains($params, '-') && str_contains($params, '<')) {
+            $pars        = explode(' ', $params);
+            $optionFirst = str_contains($pars[0], '-');
+            $colorIndex  = 2;
+            $colored     = '';
+            foreach ($pars as $p) {
+                if (isset($this->helpColors[3]) &&
+                    (($optionFirst) && str_contains($p, '<')) || ((!$optionFirst) && str_contains($p, '-'))) {
+                    $colorIndex = 3;
+                }
+                $colored .= ' ' . ((isset($this->helpColors[$colorIndex])) ?
+                        Color::colorize($p, $this->helpColors[$colorIndex], null, $raw) : $p);
+            }
+            return $colored;
+        }
+
+        return ' ' . ((isset($this->helpColors[2])) ?
+                Color::colorize($params, $this->helpColors[2], null, $raw) : $params);
+    }
+
+    /**
+     * Build one command's row for the help screen, wrapping its help text if needed
+     *
+     * @param  Command\CommandInterface $command
+     * @param  string                   $label
+     * @param  int                      $length
+     * @param  int                      $maxLength
+     * @param  bool                     $isLast
+     * @param  bool                     $wrapped
+     * @return array
+     */
+    protected function buildHelpRow(
+        Command\CommandInterface $command, string $label, int $length, int $maxLength, bool $isLast, bool $wrapped
+    ): array
+    {
+        if (!$command->hasHelp()) {
+            return [$label . $command->getHelp() . PHP_EOL, $wrapped];
+        }
+
+        $help = $command->getHelp();
+        $pad  = ($length < $maxLength) ?
+            str_repeat(' ', $maxLength - $length) . '    ' : '    ';
+
+        if (strlen((string)$command . $pad . $help) <= $this->wrap) {
+            return [$label . $pad . $help . PHP_EOL, false];
+        }
+
+        $row    = ($wrapped) ? '' : PHP_EOL;
+        $offset = $this->wrap - strlen((string)$command . $pad);
+        $lines  = explode(PHP_EOL, wordwrap($help, $offset, PHP_EOL));
+        foreach ($lines as $lineIndex => $line) {
+            $row .= ($lineIndex == 0) ?
+                $label . $pad . $line . PHP_EOL :
+                $this->getIndent() . str_repeat(' ', strlen((string)$command)) . $pad . $line . PHP_EOL;
+        }
+
+        if (!$isLast) {
+            $row .= PHP_EOL;
+        }
+
+        return [$row, true];
     }
 
     /**

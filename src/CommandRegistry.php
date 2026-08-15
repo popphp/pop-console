@@ -161,50 +161,83 @@ class CommandRegistry
      */
     public static function loadRoutes(array $routes, string $location, bool $prepend = true): array
     {
-        if (file_exists($location)) {
-            $commands = array_values(array_filter(scandir($location), function ($value) {
-                return (($value != '.') && ($value != '..') && ($value != '.empty'));
-            }));
+        if (!file_exists($location)) {
+            return $routes;
+        }
 
-            $namespace     = null;
-            $commandRoutes = [];
+        $commands = array_values(array_filter(scandir($location), function ($value) {
+            return (($value != '.') && ($value != '..') && ($value != '.empty'));
+        }));
 
-            foreach ($commands as $i => $command) {
-                if (str_ends_with($command, '.php')) {
-                    if ($namespace === null) {
-                        if (file_exists($location . DIRECTORY_SEPARATOR . $command)) {
-                            $classContents = file_get_contents($location . DIRECTORY_SEPARATOR . $command);
-                            $matches       = [];
-                            preg_match('/^\s*namespace\s+([^;]+);/m', $classContents, $matches);
-                            if (isset($matches[1])) {
-                                $namespace = trim($matches[1]);
-                            }
-                        }
-                    }
+        $namespace     = null;
+        $commandRoutes = [];
+        $total         = count($commands);
 
-                    $commandClass = $namespace . '\\' . substr($command, 0, -4);
-                    if (class_exists($commandClass)) {
-                        $commandObject = new $commandClass();
-                        $commandRoute  = ['controller' => $namespace . '\\' . substr($command, 0, -4)];
-
-                        if ($commandObject->hasHelp()) {
-                            $commandRoute['help'] = $commandObject->getHelp();
-                            if ($i == (count($commands) - 1)) {
-                                $commandRoute['help'] .= PHP_EOL;
-                            }
-                        }
-
-                        $commandRoutes[(string)$commandObject] = $commandRoute;
-                    }
-                }
-            }
-
-            if (!empty($commandRoutes)) {
-                $routes = ($prepend) ? array_merge($commandRoutes, $routes) : array_merge($routes, $commandRoutes);
+        foreach ($commands as $i => $command) {
+            $entry = self::buildCommandRouteEntry($command, $location, $namespace, $i == ($total - 1));
+            if ($entry !== null) {
+                [$key, $route]        = $entry;
+                $commandRoutes[$key] = $route;
             }
         }
 
+        if (!empty($commandRoutes)) {
+            $routes = ($prepend) ? array_merge($commandRoutes, $routes) : array_merge($routes, $commandRoutes);
+        }
+
         return $routes;
+    }
+
+    /**
+     * Build a single route entry from a discovered command file
+     *
+     * @param  string  $command
+     * @param  string  $location
+     * @param  ?string $namespace
+     * @param  bool    $isLast
+     * @return ?array
+     */
+    protected static function buildCommandRouteEntry(string $command, string $location, ?string &$namespace, bool $isLast): ?array
+    {
+        if (!str_ends_with($command, '.php')) {
+            return null;
+        }
+
+        if ($namespace === null) {
+            $namespace = self::detectNamespace($location . DIRECTORY_SEPARATOR . $command);
+        }
+
+        $commandClass = $namespace . '\\' . substr($command, 0, -4);
+        if (!class_exists($commandClass)) {
+            return null;
+        }
+
+        $commandObject = new $commandClass();
+        $commandRoute  = ['controller' => $commandClass];
+
+        if ($commandObject->hasHelp()) {
+            $commandRoute['help'] = $commandObject->getHelp() . ($isLast ? PHP_EOL : '');
+        }
+
+        return [(string)$commandObject, $commandRoute];
+    }
+
+    /**
+     * Detect the namespace declared in a PHP file
+     *
+     * @param  string $file
+     * @return ?string
+     */
+    protected static function detectNamespace(string $file): ?string
+    {
+        if (!file_exists($file)) {
+            return null;
+        }
+
+        $matches = [];
+        preg_match('/^\s*namespace\s+([^;]+);/m', file_get_contents($file), $matches);
+
+        return isset($matches[1]) ? trim($matches[1]) : null;
     }
 
 }

@@ -206,6 +206,34 @@ class ConsoleTest extends TestCase
         $this->assertEquals('    hello -v    This is the help' . PHP_EOL, $result);
     }
 
+    public function testDisplayHelpAddsBlankLineAfterWrappedNonLastCommand()
+    {
+        $wrapped = new Command(
+            name: 'wrapped',
+            help: 'This help text is long enough that it will wrap across multiple lines given a narrow wrap width.'
+        );
+        $short = new Command(name: 'short', help: 'Short help.');
+
+        $console = new Console(40, '    ');
+        if (!$console->hasWidth()) {
+            $console->setWidth(160)->setHeight(50);
+        }
+        $console->addCommands([$wrapped, $short]);
+
+        ob_start();
+        $console->help();
+        $result = ob_get_clean();
+
+        $wrappedPos = strpos($result, 'wrapped');
+        $shortPos   = strpos($result, 'short');
+
+        $this->assertNotFalse($wrappedPos);
+        $this->assertNotFalse($shortPos);
+        $this->assertStringContainsString(
+            PHP_EOL . PHP_EOL, substr($result, $wrappedPos, $shortPos - $wrappedPos)
+        );
+    }
+
     public function testDisplayHelpColors()
     {
         $userList   = new Command(name: 'user list', params: '-v --option=123 [<id>]', help: 'This is the users list command.');

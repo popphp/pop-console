@@ -93,4 +93,11 @@ interface CommandInterface
      */
     public function hasHelp(): bool;
 
+    /**
+     * Render the command as its name and params
+     *
+     * @return string
+     */
+    public function __toString(): string;
+
 }

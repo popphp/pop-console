@@ -251,6 +251,27 @@ class ProgressBarTest extends TestCase
         $this->assertTrue($bar->isFinished());
     }
 
+    public function testRedrawIsSkippedWhenRenderedOutputUnchanged()
+    {
+        $bar = new ProgressBar(1000, null, 10);
+
+        ob_start();
+        $bar->setProgress(5);
+        $firstOutput = ob_get_clean();
+
+        ob_start();
+        $bar->setProgress(5);
+        $repeatedOutput = ob_get_clean();
+
+        ob_start();
+        $bar->setProgress(6);
+        $changedOutput = ob_get_clean();
+
+        $this->assertNotEmpty($firstOutput);
+        $this->assertSame('', $repeatedOutput);
+        $this->assertNotEmpty($changedOutput);
+    }
+
     public function testFluentSettersAllReturnSameInstance()
     {
         $bar = new ProgressBar(10);
