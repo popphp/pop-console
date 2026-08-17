@@ -73,6 +73,27 @@ class CommandRegistryTest extends TestCase
         $this->assertCount(0, $registry->all());
         $this->assertEquals('./app app:init', $commands[0]->getName());
         $this->assertEquals('./app db:config', $commands[1]->getName());
+        $this->assertEquals('./app', $commands[0]->getScriptName());
+        $this->assertEquals('./app', $commands[1]->getScriptName());
+    }
+
+    public function testFromRoutesWithoutScriptNameLeavesScriptNameUnset()
+    {
+        $app = new Application(['routes' => [
+            'db:config' => [
+                'controller' => 'MyAppController',
+                'action'     => 'config',
+                'help'       => 'Config DB'
+            ]
+        ]]);
+
+        $registry = new CommandRegistry();
+        $commands = $registry->fromRoutes($app->router()->getRouteMatch());
+
+        $this->assertCount(1, $commands);
+        $this->assertEquals('db:config', $commands[0]->getName());
+        $this->assertFalse($commands[0]->hasScriptName());
+        $this->assertNull($commands[0]->getScriptName());
     }
 
     public function testFromRoutesGetsHelpFromCommandObjectWhenRouteHasNoHelp()

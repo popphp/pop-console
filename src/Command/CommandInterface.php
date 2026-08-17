@@ -52,6 +52,14 @@ interface CommandInterface
     public function setHelp(string $help): static;
 
     /**
+     * Set the script name the command was registered under
+     *
+     * @param  string $scriptName
+     * @return static
+     */
+    public function setScriptName(string $scriptName): static;
+
+    /**
      * Get the command name
      *
      * @return ?string
@@ -73,6 +81,13 @@ interface CommandInterface
     public function getHelp(): ?string;
 
     /**
+     * Get the script name the command was registered under
+     *
+     * @return ?string
+     */
+    public function getScriptName(): ?string;
+
+    /**
      * Determine if the command has name
      *
      * @return bool
@@ -92,6 +107,13 @@ interface CommandInterface
      * @return bool
      */
     public function hasHelp(): bool;
+
+    /**
+     * Determine if the command has a script name
+     *
+     * @return bool
+     */
+    public function hasScriptName(): bool;
 
     /**
      * Render the command as its name and params

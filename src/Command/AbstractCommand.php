@@ -57,6 +57,13 @@ abstract class AbstractCommand extends Dispatch\AbstractDispatcher implements Di
     protected ?string $help = null;
 
     /**
+     * Script name the command was registered under (e.g. './app'), used to
+     * recover the command's bare, unprefixed name for subcommand matching
+     * @var ?string
+     */
+    protected ?string $scriptName = null;
+
+    /**
      * Instantiate the command object
      *
      * @param ?Application $application
@@ -136,6 +143,18 @@ abstract class AbstractCommand extends Dispatch\AbstractDispatcher implements Di
     }
 
     /**
+     * Set the script name the command was registered under
+     *
+     * @param  string $scriptName
+     * @return static
+     */
+    public function setScriptName(string $scriptName): static
+    {
+        $this->scriptName = $scriptName;
+        return $this;
+    }
+
+    /**
      * Get the command name
      *
      * @return ?string
@@ -166,6 +185,16 @@ abstract class AbstractCommand extends Dispatch\AbstractDispatcher implements Di
     }
 
     /**
+     * Get the script name the command was registered under
+     *
+     * @return ?string
+     */
+    public function getScriptName(): ?string
+    {
+        return $this->scriptName;
+    }
+
+    /**
      * Determine if the command has name
      *
      * @return bool
@@ -193,6 +222,16 @@ abstract class AbstractCommand extends Dispatch\AbstractDispatcher implements Di
     public function hasHelp(): bool
     {
         return ($this->help !== null);
+    }
+
+    /**
+     * Determine if the command has a script name
+     *
+     * @return bool
+     */
+    public function hasScriptName(): bool
+    {
+        return ($this->scriptName !== null);
     }
 
     /**

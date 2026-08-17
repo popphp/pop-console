@@ -234,6 +234,82 @@ class ConsoleTest extends TestCase
         );
     }
 
+    public function testDisplayHelpWithSubCommandFiltersToMatchingNamespace()
+    {
+        $dbMigrate   = new Command(name: 'db:migrate', help: 'Migrate the database.');
+        $userDbSync  = new Command(name: 'userdb:sync', help: 'Sync the user database.');
+
+        $console = new Console(80, '    ');
+        if (!$console->hasWidth()) {
+            $console->setWidth(160)->setHeight(50);
+        }
+        $console->addCommands([$dbMigrate, $userDbSync]);
+
+        ob_start();
+        $console->help(null, false, 'db:');
+        $result = ob_get_clean();
+
+        $this->assertStringContainsString('db:migrate', $result);
+        $this->assertStringNotContainsString('userdb:sync', $result);
+    }
+
+    public function testDisplayHelpWithSubCommandDoesNotMatchScriptNameCollision()
+    {
+        $dbMigrate = (new Command(name: 'dbapp db:migrate', help: 'Migrate the database.'))->setScriptName('dbapp');
+        $userList  = (new Command(name: 'dbapp user:list', help: 'List users.'))->setScriptName('dbapp');
+
+        $console = new Console(80, '    ');
+        if (!$console->hasWidth()) {
+            $console->setWidth(160)->setHeight(50);
+        }
+        $console->addCommands([$dbMigrate, $userList]);
+
+        ob_start();
+        $console->help(null, false, 'db');
+        $result = ob_get_clean();
+
+        $this->assertStringContainsString('dbapp db:migrate', $result);
+        $this->assertStringNotContainsString('dbapp user:list', $result);
+    }
+
+    public function testDisplayHelpWithSubCommandWithoutScriptNameStillMatchesOnBareName()
+    {
+        $userList = new Command(name: 'user list', params: '-v', help: 'List users.');
+        $userEdit = new Command(name: 'user edit', params: '<id>', help: 'Edit a user.');
+        $adminList = new Command(name: 'admin list', help: 'List admins.');
+
+        $console = new Console(80, '    ');
+        if (!$console->hasWidth()) {
+            $console->setWidth(160)->setHeight(50);
+        }
+        $console->addCommands([$userList, $userEdit, $adminList]);
+
+        ob_start();
+        $console->help(null, false, 'user');
+        $result = ob_get_clean();
+
+        $this->assertStringContainsString('user list', $result);
+        $this->assertStringContainsString('user edit', $result);
+        $this->assertStringNotContainsString('admin list', $result);
+    }
+
+    public function testDisplayHelpWithSubCommandMatchingNothingDoesNotThrow()
+    {
+        $command = new Command(name: 'db:migrate', help: 'Migrate the database.');
+
+        $console = new Console(80, '    ');
+        if (!$console->hasWidth()) {
+            $console->setWidth(160)->setHeight(50);
+        }
+        $console->addCommand($command);
+
+        ob_start();
+        $console->help(null, false, 'nope:');
+        $result = ob_get_clean();
+
+        $this->assertStringNotContainsString('db:migrate', $result);
+    }
+
     public function testDisplayHelpColors()
     {
         $userList   = new Command(name: 'user list', params: '-v --option=123 [<id>]', help: 'This is the users list command.');

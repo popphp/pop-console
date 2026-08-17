@@ -621,14 +621,15 @@ class Console
      *
      * @param  ?string $command
      * @param  bool    $raw
+     * @param  ?string $subCommand
      * @return string|null
      */
-    public function help(?string $command = null, bool $raw = false): string|null
+    public function help(?string $command = null, bool $raw = false, ?string $subCommand = null): string|null
     {
         if ($command !== null) {
             return $this->commands->get($command)?->getHelp();
         } else {
-            $this->displayHelp($raw);
+            $this->displayHelp($raw, $subCommand);
             return null;
         }
     }
@@ -1267,9 +1268,11 @@ class Console
     /**
      * Display console help
      *
+     * @param  bool    $raw
+     * @param  ?string $subCommand
      * @return void
      */
-    public function displayHelp(bool $raw = false): void
+    public function displayHelp(bool $raw = false, ?string $subCommand = null): void
     {
         $this->response = null;
         $registry       = $this->commands->all();
@@ -1281,12 +1284,14 @@ class Console
         }
 
         foreach ($registry as $key => $command) {
-            [$label, $length]     = $this->formatHelpLabel($command, $raw);
-            $commands[$key]       = $this->getIndent() . $label;
-            $commandLengths[$key] = $length;
+            if ($this->matchesSubCommand($command, $subCommand)) {
+                [$label, $length]     = $this->formatHelpLabel($command, $raw);
+                $commands[$key]       = $this->getIndent() . $label;
+                $commandLengths[$key] = $length;
+            }
         }
 
-        $maxLength = max($commandLengths);
+        $maxLength = (!empty($commandLengths)) ? max($commandLengths) : 0;
         $wrapped   = false;
         $total     = count($commands);
         $i         = 0;
@@ -1304,6 +1309,38 @@ class Console
         }
 
         $this->send(false);
+    }
+
+    /**
+     * Determine if a registered command belongs to the requested subcommand namespace
+     *
+     * Matches against the command's bare name with its registered script name (e.g. './app') stripped
+     * off first, rather than the raw display key, so a subcommand like 'db' or 'db:' correctly matches
+     * a command named 'db:migrate' without also matching an unrelated command registered under a script
+     * name that merely happens to start with the same letters (e.g. a script called 'dbapp'). Command
+     * naming conventions aren't assumed to use any particular delimiter (':', space, or otherwise) since
+     * the script name is stripped by exact, known value rather than guessed from string structure.
+     *
+     * @param  Command\CommandInterface $command
+     * @param  ?string                  $subCommand
+     * @return bool
+     */
+    protected function matchesSubCommand(Command\CommandInterface $command, ?string $subCommand = null): bool
+    {
+        if (empty($subCommand)) {
+            return true;
+        }
+
+        $name = (string)$command->getName();
+
+        if ($command->hasScriptName()) {
+            $prefix = $command->getScriptName() . ' ';
+            if (str_starts_with($name, $prefix)) {
+                $name = substr($name, strlen($prefix));
+            }
+        }
+
+        return str_starts_with($name, $subCommand);
     }
 
     /**

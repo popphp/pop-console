@@ -658,6 +658,34 @@ the full screen:
 $console->help('users'); // 'This is the users help screen'
 ```
 
+### Filtering help by subcommand namespace
+
+Both `help()` and `displayHelp()` take an optional third/second `$subCommand` argument (respectively)
+that narrows the help screen down to commands under a given namespace, so `./myapp help db:` (or
+just `./myapp help db`, the trailing `:` isn't required) only lists `db:*` commands instead of every
+registered command:
+
+```php
+$console->addCommands([
+    new Command(name: 'db:migrate', help: 'Migrate the database'),
+    new Command(name: 'db:seed', help: 'Seed the database'),
+    new Command(name: 'user:list', help: 'List users'),
+]);
+
+$console->help(null, false, 'db');
+```
+
+```text
+    db:migrate    Migrate the database
+    db:seed       Seed the database
+```
+
+Matching is done against each command's own bare name with any registered script name (see below)
+stripped off first, checked with a simple prefix match — so it isn't tied to `:` as a namespace
+delimiter, and works the same way for space-separated command names like `user list`/`user edit`
+(`help(null, false, 'user')` matches both). A `$subCommand` that matches nothing renders an empty
+list rather than throwing.
+
 However, the console object has the method `addCommandsFromRoutes()` which works in conjunction
 with a `Pop\Router\Cli\Match` object to automatically generate the command, along with their
 parameters and help strings.
@@ -675,6 +703,14 @@ For each route, help text is taken from the route config's `'help'` value if one
 and the route's controller implements `Pop\Console\Command\CommandInterface`, the controller is
 instantiated (with no constructor arguments) and its own `getHelp()` is used instead — so a `Command`
 subclass with hardcoded help text doesn't need that help duplicated in the route config.
+
+The script name passed to `addCommandsFromRoutes()`/`getCommandsFromRoutes()` (`'./myapp'` above) is
+also recorded on each `Command` it builds via `setScriptName()`/`getScriptName()`/`hasScriptName()`.
+That's what lets subcommand filtering (see [Filtering help by subcommand namespace](#filtering-help-by-subcommand-namespace)
+above) tell the script name apart from the command's own name, even when they happen to share a
+prefix — e.g. a script named `dbapp` won't cause `help(null, false, 'db')` to also match an unrelated
+`user:list` command. Commands registered directly via `addCommand()`/`addCommands()` have no script
+name recorded, and subcommand filtering matches their full name as-is.
 
 ### Help colors
 
