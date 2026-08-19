@@ -1128,4 +1128,142 @@ HEADER
         $this->assertEquals(127, $exitCode, $stderr);
     }
 
+    public function testPromptMultiSingleSelection()
+    {
+        $console = new Console();
+        if (!$console->hasWidth()) {
+            $console->setWidth(160)->setHeight(50);
+        }
+        $console->setInputStream($this->createInputStream('2'));
+
+        ob_start();
+        $result = $console->promptMulti('Select: ', ['1', '2', '3']);
+        ob_get_clean();
+
+        $this->assertEquals(['2'], $result);
+    }
+
+    public function testPromptMultiMultipleSelections()
+    {
+        $console = new Console();
+        if (!$console->hasWidth()) {
+            $console->setWidth(160)->setHeight(50);
+        }
+        $console->setInputStream($this->createInputStream('1,3'));
+
+        ob_start();
+        $result = $console->promptMulti('Select: ', ['1', '2', '3']);
+        ob_get_clean();
+
+        $this->assertEquals(['1', '3'], $result);
+    }
+
+    public function testPromptMultiTrimsWhitespaceAroundTokens()
+    {
+        $console = new Console();
+        if (!$console->hasWidth()) {
+            $console->setWidth(160)->setHeight(50);
+        }
+        $console->setInputStream($this->createInputStream(' 1 ,  3 '));
+
+        ob_start();
+        $result = $console->promptMulti('Select: ', ['1', '2', '3']);
+        ob_get_clean();
+
+        $this->assertEquals(['1', '3'], $result);
+    }
+
+    public function testPromptMultiDeduplicatesRepeatedTokens()
+    {
+        $console = new Console();
+        if (!$console->hasWidth()) {
+            $console->setWidth(160)->setHeight(50);
+        }
+        $console->setInputStream($this->createInputStream('2,2,1'));
+
+        ob_start();
+        $result = $console->promptMulti('Select: ', ['1', '2', '3']);
+        ob_get_clean();
+
+        $this->assertEquals(['2', '1'], $result);
+    }
+
+    public function testPromptMultiRetriesOnInvalidToken()
+    {
+        $console = new Console();
+        if (!$console->hasWidth()) {
+            $console->setWidth(160)->setHeight(50);
+        }
+        $console->setInputStream($this->createInputStream('1,9', '2'));
+
+        ob_start();
+        $result = $console->promptMulti('Select: ', ['1', '2', '3']);
+        $output = ob_get_clean();
+
+        $this->assertEquals(['2'], $result);
+        // Prompt is re-displayed once for the retry
+        $this->assertEquals(2, substr_count($output, 'Select: '));
+    }
+
+    public function testPromptMultiEmptyInputReturnsEmptyArray()
+    {
+        $console = new Console();
+        if (!$console->hasWidth()) {
+            $console->setWidth(160)->setHeight(50);
+        }
+        $console->setInputStream($this->createInputStream(''));
+
+        ob_start();
+        $result = $console->promptMulti('Select: ', ['1', '2', '3']);
+        ob_get_clean();
+
+        $this->assertEquals([], $result);
+    }
+
+    public function testPromptMultiAtEndOfStreamReturnsEmptyArray()
+    {
+        $console = new Console();
+        if (!$console->hasWidth()) {
+            $console->setWidth(160)->setHeight(50);
+        }
+        // Stream with no lines at all - immediate EOF
+        $console->setInputStream($this->createInputStream());
+
+        ob_start();
+        $result = $console->promptMulti('Select: ', ['1', '2', '3']);
+        ob_get_clean();
+
+        $this->assertEquals([], $result);
+    }
+
+    public function testPromptMultiIsCaseInsensitiveByDefault()
+    {
+        $console = new Console();
+        if (!$console->hasWidth()) {
+            $console->setWidth(160)->setHeight(50);
+        }
+        $console->setInputStream($this->createInputStream('WEB,CLI'));
+
+        ob_start();
+        $result = $console->promptMulti('Select: ', ['web', 'api', 'cli']);
+        ob_get_clean();
+
+        $this->assertEquals(['web', 'cli'], $result);
+    }
+
+    public function testPromptMultiCaseSensitiveRejectsWrongCase()
+    {
+        $console = new Console();
+        if (!$console->hasWidth()) {
+            $console->setWidth(160)->setHeight(50);
+        }
+        $console->setInputStream($this->createInputStream('WEB', 'web'));
+
+        ob_start();
+        $result = $console->promptMulti('Select: ', ['web', 'api'], true);
+        ob_get_clean();
+
+        $this->assertEquals(['web'], $result);
+    }
+
 }

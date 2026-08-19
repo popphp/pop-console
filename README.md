@@ -367,6 +367,11 @@ $ ./app
     Your favorite letter is B.
 ```
 
+```php
+// Returns an array of the selected values
+$types = $console->promptMulti('Select one or more, comma-separated: ', ['1', '2', '3']);
+```
+
 ### Confirm
 
 The `confirm()` method is a shorthand version of a prompt to ask if the user is sure they want to proceed,

@@ -1161,6 +1161,57 @@ class Console
     }
 
     /**
+     * Display a prompt that accepts one or more comma-separated selections
+     *
+     * @param  string $prompt
+     * @param  array  $options
+     * @param  bool   $caseSensitive
+     * @param  int    $length
+     * @param  bool   $withHeaders
+     * @return array
+     */
+    public function promptMulti(
+        string $prompt, array $options, bool $caseSensitive = false, int $length = 500, bool $withHeaders = true
+    ): array
+    {
+        foreach ($options as $key => $value) {
+            $options[$key] = ($caseSensitive) ? (string)$value : strtolower((string)$value);
+        }
+
+        if (($withHeaders) && ($this->header !== null)) {
+            $this->headerSent = true;
+            echo $this->formatTemplate($this->header) . $this->getIndent() . $prompt;
+        } else {
+            echo $this->getIndent() . $prompt;
+        }
+
+        $selected = null;
+
+        while ($selected === null) {
+            $input  = $this->getPromptInput($prompt, $length, $caseSensitive);
+            $tokens = array_values(array_filter(
+                array_map('trim', explode(',', $input)),
+                fn($token) => $token !== ''
+            ));
+
+            // Empty input is a valid "no selection" answer, and is also what a
+            // closed input stream produces. Returning here is what keeps EOF
+            // from spinning the retry loop forever.
+            if (empty($tokens)) {
+                return [];
+            }
+
+            if (empty(array_diff($tokens, $options))) {
+                $selected = array_values(array_unique($tokens));
+            } else {
+                echo $this->getIndent() . $prompt;
+            }
+        }
+
+        return $selected;
+    }
+
+    /**
      * Display confirm message prompt
      *
      * @param  string $message
