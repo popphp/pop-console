@@ -1291,20 +1291,6 @@ class Console
     }
 
     /**
-     * Determine if a registered command belongs to the requested subcommand namespace
-     *
-     * Matches against the command's bare name with its registered script name (e.g. './app') stripped
-     * off first, rather than the raw display key, so a subcommand like 'db' or 'db:' correctly matches
-     * a command named 'db:migrate' without also matching an unrelated command registered under a script
-     * name that merely happens to start with the same letters (e.g. a script called 'dbapp'). Command
-     * naming conventions aren't assumed to use any particular delimiter (':', space, or otherwise) since
-     * the script name is stripped by exact, known value rather than guessed from string structure.
-     *
-     * @param  Command\CommandInterface $command
-     * @param  ?string                  $subCommand
-     * @return bool
-     */
-    /**
      * Clear the console
      *
      * @return void
