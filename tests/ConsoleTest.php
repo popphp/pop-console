@@ -1012,6 +1012,36 @@ HEADER
         $this->assertEquals(2, substr_count($result, 'Test prompt: '));
     }
 
+    public function testPromptWithOptionsAtEndOfStreamReturnsEmptyStringInsteadOfLooping()
+    {
+        $console = new Console();
+        if (!$console->hasWidth()) {
+            $console->setWidth(160)->setHeight(50);
+        }
+        $console->setInputStream($this->createInputStream());
+
+        ob_start();
+        $answer = $console->prompt('Test prompt: ', ['Y', 'N']);
+        ob_get_clean();
+
+        $this->assertEquals('', $answer);
+    }
+
+    public function testConfirmAtEndOfStreamReturnsEmptyStringInsteadOfLooping()
+    {
+        $console = new Console();
+        if (!$console->hasWidth()) {
+            $console->setWidth(160)->setHeight(50);
+        }
+        $console->setInputStream($this->createInputStream());
+
+        ob_start();
+        $answer = $console->confirm(exit: false);
+        ob_get_clean();
+
+        $this->assertEquals('', $answer);
+    }
+
     public function testAppendWithNoWrapOrWidth()
     {
         $console = new Console(null);

@@ -1150,6 +1150,14 @@ class Console
                     echo $this->getIndent() . $prompt;
                 }
                 $input = $this->getPromptInput($prompt, $length, $caseSensitive);
+
+                // Empty input is what a closed/exhausted input stream produces on every
+                // read, so treat it the same as promptMulti() does: stop retrying and
+                // return it rather than spin forever re-reading a stream that can't
+                // ever satisfy $options.
+                if ($input === '') {
+                    return $input;
+                }
             }
         } else {
             while ($input === null) {
