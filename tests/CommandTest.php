@@ -28,6 +28,7 @@ class CommandTest extends TestCase
     {
         $command = new Command(name: 'hello');
         $command->setName('helloworld');
+        $this->assertTrue($command->hasName());
         $this->assertEquals('helloworld', $command->getName());
     }
 

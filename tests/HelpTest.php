@@ -107,6 +107,26 @@ class HelpTest extends TestCase
         $this->assertEquals('    hello -v    This is the help' . PHP_EOL, $result);
     }
 
+    public function testConsoleDisplayHelpIncludesHeaderAndFooter()
+    {
+        $command = new Command(name: 'hello', help: 'This is the help');
+        $console = new Console(80, '    ');
+        if (!$console->hasWidth()) {
+            $console->setWidth(160)->setHeight(50);
+        }
+        $console->setHeader('My Header');
+        $console->setFooter('My Footer');
+        $console->addCommand($command);
+
+        ob_start();
+        $console->help();
+        $result = ob_get_clean();
+
+        $this->assertStringContainsString('My Header', $result);
+        $this->assertStringContainsString('hello', $result);
+        $this->assertStringContainsString('My Footer', $result);
+    }
+
     public function testConsoleGetHelpForNamedCommandStillReturnsCommandHelp()
     {
         $command = new Command(name: 'hello');
@@ -177,6 +197,20 @@ class HelpTest extends TestCase
         // But should still contain the actual text
         $this->assertStringContainsString('user edit', $result);
         $this->assertStringContainsString('<id> --verbose', $result);
+    }
+
+    public function testRenderWithoutFirstHelpColorLeavesSingleWordNameUncolored()
+    {
+        $command = new Command(name: 'hello', params: '-v', help: 'Hello help');
+        $help    = new Help();
+
+        $result = $help->render([$command], false, null, '    ', 80, [2 => Color::BOLD_MAGENTA]);
+
+        // The name has no escape code prefix (helpColors[0] isn't set), even though the params
+        // that follow it do get colorized (helpColors[2] is set) — proves colorizeHelpName()'s
+        // final fallback branch (no color configured for a single-word name) ran.
+        $this->assertTrue(str_starts_with($result, '    hello'));
+        $this->assertStringContainsString("\x1b[1;35m-v\x1b[0m", $result);
     }
 
 }
