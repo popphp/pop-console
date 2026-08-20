@@ -146,6 +146,27 @@ class ConsoleTest extends TestCase
         $this->assertEquals('./app db:config', $console->getCommand('./app db:config')->getName());
     }
 
+    public function testGetCommandsFromRoutes()
+    {
+        $app = new Application(['routes' => [
+            'app:init [--web] [--api] [--cli] <namespace>' => [
+                'controller' => 'MyAppController',
+                'action'     => 'init',
+                'help'       => 'Init application' . PHP_EOL
+            ]
+        ]]);
+
+        $console = new Console();
+        if (!$console->hasWidth()) {
+            $console->setWidth(160)->setHeight(50);
+        }
+        $commands = $console->getCommandsFromRoutes($app->router()->getRouteMatch(), './app');
+
+        $this->assertCount(1, $commands);
+        $this->assertEquals('./app app:init', $commands[0]->getName());
+        $this->assertFalse($console->hasCommand('./app app:init'));
+    }
+
     public function testAddAndGetCommands()
     {
         $console = new Console();
@@ -328,6 +349,294 @@ class ConsoleTest extends TestCase
         $console->setHeader('Single Line Header', false);
 
         $this->assertEquals('    Single Line Header' . PHP_EOL, $console->getHeader(true));
+    }
+
+    public function testLineWithReturnTrueReturnsStringInsteadOfEchoing()
+    {
+        $console = new Console(10);
+        if (!$console->hasWidth()) {
+            $console->setWidth(160)->setHeight(50);
+        }
+
+        $result = $console->line('-', null, true, true);
+
+        $this->assertEquals('    ----------' . PHP_EOL, $result);
+    }
+
+    public function testHeaderWithReturnTrueReturnsStringInsteadOfEchoing()
+    {
+        $console = new Console();
+        if (!$console->hasWidth()) {
+            $console->setWidth(160)->setHeight(50);
+        }
+
+        $result = $console->header('Hello World', '-', null, 'left', true, true);
+
+        $this->assertEquals('    Hello World' . PHP_EOL . '    -----------' . PHP_EOL, $result);
+    }
+
+    public function testHeaderLeftWithReturnTrueReturnsStringInsteadOfEchoing()
+    {
+        $console = new Console(20);
+        if (!$console->hasWidth()) {
+            $console->setWidth(160)->setHeight(50);
+        }
+
+        $result = $console->headerLeft('Hello World', '-', 'auto', true, true);
+
+        $this->assertEquals('    Hello World' . PHP_EOL . '    --------------------' . PHP_EOL, $result);
+    }
+
+    public function testHeaderCenterDelegatesToHeader()
+    {
+        $console = new Console(20);
+        if (!$console->hasWidth()) {
+            $console->setWidth(160)->setHeight(50);
+        }
+
+        ob_start();
+        $console->headerCenter('Hello World');
+        $result = ob_get_clean();
+
+        $this->assertEquals('         Hello World' . PHP_EOL . '    --------------------' . PHP_EOL, $result);
+
+        $returned = $console->headerCenter('Hello World', '-', 'auto', true, true);
+        $this->assertEquals($result, $returned);
+    }
+
+    public function testHeaderRightDelegatesToHeader()
+    {
+        $console = new Console(20);
+        if (!$console->hasWidth()) {
+            $console->setWidth(160)->setHeight(50);
+        }
+
+        ob_start();
+        $console->headerRight('Hello World');
+        $result = ob_get_clean();
+
+        $this->assertEquals('             Hello World' . PHP_EOL . '    --------------------' . PHP_EOL, $result);
+
+        $returned = $console->headerRight('Hello World', '-', 'auto', true, true);
+        $this->assertEquals($result, $returned);
+    }
+
+    public function testAlertDelegatesToAlert()
+    {
+        $console = new Console(20);
+        if (!$console->hasWidth()) {
+            $console->setWidth(160)->setHeight(50);
+        }
+
+        ob_start();
+        $console->alert('Hello World', Color::BOLD_BLACK, Color::WHITE);
+        $result = ob_get_clean();
+
+        $this->assertTrue(str_contains($result, "\x1b[1;30m\x1b[47m    Hello World    \x1b[0m"));
+
+        $returned = $console->alert('Hello World', Color::BOLD_BLACK, Color::WHITE, null, 'center', 4, true, true);
+        $this->assertEquals($result, $returned);
+    }
+
+    public function testAlertBoxWithReturnTrueReturnsStringInsteadOfEchoing()
+    {
+        $console = new Console(80, '    ');
+        if (!$console->hasWidth()) {
+            $console->setWidth(160)->setHeight(50);
+        }
+
+        $result = $console->alertBox('Hello World', '-', '|', null, 'center', 4, true, true);
+
+        $this->assertStringContainsString('Hello World', $result);
+        $this->assertStringContainsString('|', $result);
+    }
+
+    public function testAlertDangerWithReturnTrueReturnsStringInsteadOfEchoing()
+    {
+        $console = new Console(20);
+        if (!$console->hasWidth()) {
+            $console->setWidth(160)->setHeight(50);
+        }
+
+        $result = $console->alertDanger('Hello World', null, 'center', 4, true, true);
+
+        $this->assertTrue(str_contains($result, "\x1b[1;97m\x1b[101m    Hello World    \x1b[0m"));
+    }
+
+    public function testAlertWarningDelegatesToAlert()
+    {
+        $console = new Console(20);
+        if (!$console->hasWidth()) {
+            $console->setWidth(160)->setHeight(50);
+        }
+
+        ob_start();
+        $console->alertWarning('Hello World');
+        $result = ob_get_clean();
+
+        $this->assertTrue(str_contains($result, "\x1b[1;30m\x1b[103m    Hello World    \x1b[0m"));
+
+        $returned = $console->alertWarning('Hello World', null, 'center', 4, true, true);
+        $this->assertEquals($result, $returned);
+    }
+
+    public function testAlertSuccessDelegatesToAlert()
+    {
+        $console = new Console(20);
+        if (!$console->hasWidth()) {
+            $console->setWidth(160)->setHeight(50);
+        }
+
+        ob_start();
+        $console->alertSuccess('Hello World');
+        $result = ob_get_clean();
+
+        $this->assertTrue(str_contains($result, "\x1b[1;30m\x1b[42m    Hello World    \x1b[0m"));
+
+        $returned = $console->alertSuccess('Hello World', null, 'center', 4, true, true);
+        $this->assertEquals($result, $returned);
+    }
+
+    public function testAlertInfoDelegatesToAlert()
+    {
+        $console = new Console(20);
+        if (!$console->hasWidth()) {
+            $console->setWidth(160)->setHeight(50);
+        }
+
+        ob_start();
+        $console->alertInfo('Hello World');
+        $result = ob_get_clean();
+
+        $this->assertTrue(str_contains($result, "\x1b[1;97m\x1b[104m    Hello World    \x1b[0m"));
+
+        $returned = $console->alertInfo('Hello World', null, 'center', 4, true, true);
+        $this->assertEquals($result, $returned);
+    }
+
+    public function testAlertPrimaryDelegatesToAlert()
+    {
+        $console = new Console(20);
+        if (!$console->hasWidth()) {
+            $console->setWidth(160)->setHeight(50);
+        }
+
+        ob_start();
+        $console->alertPrimary('Hello World');
+        $result = ob_get_clean();
+
+        $this->assertTrue(str_contains($result, "\x1b[1;97m\x1b[44m    Hello World    \x1b[0m"));
+
+        $returned = $console->alertPrimary('Hello World', null, 'center', 4, true, true);
+        $this->assertEquals($result, $returned);
+    }
+
+    public function testAlertSecondaryDelegatesToAlert()
+    {
+        $console = new Console(20);
+        if (!$console->hasWidth()) {
+            $console->setWidth(160)->setHeight(50);
+        }
+
+        ob_start();
+        $console->alertSecondary('Hello World');
+        $result = ob_get_clean();
+
+        $this->assertTrue(str_contains($result, "\x1b[1;97m\x1b[45m    Hello World    \x1b[0m"));
+
+        $returned = $console->alertSecondary('Hello World', null, 'center', 4, true, true);
+        $this->assertEquals($result, $returned);
+    }
+
+    public function testAlertDarkDelegatesToAlert()
+    {
+        $console = new Console(20);
+        if (!$console->hasWidth()) {
+            $console->setWidth(160)->setHeight(50);
+        }
+
+        ob_start();
+        $console->alertDark('Hello World');
+        $result = ob_get_clean();
+
+        $this->assertTrue(str_contains($result, "\x1b[1;97m\x1b[100m    Hello World    \x1b[0m"));
+
+        $returned = $console->alertDark('Hello World', null, 'center', 4, true, true);
+        $this->assertEquals($result, $returned);
+    }
+
+    public function testAlertLightDelegatesToAlert()
+    {
+        $console = new Console(20);
+        if (!$console->hasWidth()) {
+            $console->setWidth(160)->setHeight(50);
+        }
+
+        ob_start();
+        $console->alertLight('Hello World');
+        $result = ob_get_clean();
+
+        $this->assertTrue(str_contains($result, "\x1b[1;30m\x1b[47m    Hello World    \x1b[0m"));
+
+        $returned = $console->alertLight('Hello World', null, 'center', 4, true, true);
+        $this->assertEquals($result, $returned);
+    }
+
+    public function testTableWithHeaderColorsAppliesColor()
+    {
+        $console = new Console(80, '    ');
+        if (!$console->hasWidth()) {
+            $console->setWidth(160)->setHeight(50);
+        }
+
+        $result = $console->table(['Name'], [['kettle']], '-', '|', Color::BOLD_WHITE, Color::BLUE, false, true);
+
+        $this->assertStringContainsString("\x1b[1;37m\x1b[44m", $result);
+        $this->assertStringContainsString('kettle', $result);
+    }
+
+    public function testPromptWithHeaderIncludesFormattedHeaderInOutput()
+    {
+        $console = new Console();
+        if (!$console->hasWidth()) {
+            $console->setWidth(160)->setHeight(50);
+        }
+        $console->setHeader('Test Header:');
+        $console->setInputStream($this->createPromptInputStream('y'));
+
+        ob_start();
+        $console->prompt('Test prompt: ');
+        $result = ob_get_clean();
+
+        $this->assertTrue(str_contains($result, 'Test Header:'));
+        $this->assertTrue($console->getHeaderSent());
+    }
+
+    public function testPromptMultiWithHeaderIncludesFormattedHeaderInOutput()
+    {
+        $console = new Console();
+        if (!$console->hasWidth()) {
+            $console->setWidth(160)->setHeight(50);
+        }
+        $console->setHeader('Test Header:');
+        $console->setInputStream($this->createPromptInputStream('2'));
+
+        ob_start();
+        $console->promptMulti('Select: ', ['1', '2', '3']);
+        $result = ob_get_clean();
+
+        $this->assertTrue(str_contains($result, 'Test Header:'));
+        $this->assertTrue($console->getHeaderSent());
+    }
+
+    private function createPromptInputStream(string ...$lines): mixed
+    {
+        $stream = fopen('php://memory', 'r+');
+        foreach ($lines as $line) {
+            fwrite($stream, $line . PHP_EOL);
+        }
+        rewind($stream);
+        return $stream;
     }
 
 }

@@ -42,6 +42,18 @@ class PromptTest extends TestCase
         $this->assertTrue(str_contains($result, 'Test Header:'));
     }
 
+    public function testPromptMultiWithFormattedHeaderIncludesHeaderInOutput()
+    {
+        $prompt = new Prompt('    ', 'Test Header:' . PHP_EOL, $this->createInputStream('2'));
+
+        ob_start();
+        $result = $prompt->promptMulti('Select: ', ['1', '2', '3']);
+        $output = ob_get_clean();
+
+        $this->assertEquals(['2'], $result);
+        $this->assertTrue(str_contains($output, 'Test Header:'));
+    }
+
     public function testMultiLinePromptSequenceFromSingleStream()
     {
         $prompt = new Prompt('    ', null, $this->createInputStream('x', 'y'));
@@ -316,6 +328,14 @@ class PromptTest extends TestCase
     public function testConfirmNoExitsWithCode127()
     {
         $code = 'require $argv[1]; $c = new \Pop\Console\Console(); $c->confirm();';
+        [$stdout, $stderr, $exitCode] = $this->runInSubprocess($code, "n\n");
+
+        $this->assertEquals(127, $exitCode, $stderr);
+    }
+
+    public function testPromptConfirmDirectlyExitsWithCode127()
+    {
+        $code = 'require $argv[1]; $p = new \Pop\Console\Prompt(); $p->confirm();';
         [$stdout, $stderr, $exitCode] = $this->runInSubprocess($code, "n\n");
 
         $this->assertEquals(127, $exitCode, $stderr);

@@ -158,6 +158,25 @@ class CommandRegistryTest extends TestCase
         $this->assertSame($routes, $result);
     }
 
+    public function testDetectNamespaceReturnsNullWhenFileDoesNotExist()
+    {
+        $method = new \ReflectionMethod(CommandRegistry::class, 'detectNamespace');
+        $method->setAccessible(true);
+
+        $this->assertNull($method->invoke(null, __DIR__ . '/Fixtures/DoesNotExist/Missing.php'));
+    }
+
+    public function testLoadRoutesSkipsNonPhpFilesAndUndefinedCommandClasses()
+    {
+        $routes = CommandRegistry::loadRoutes([], __DIR__ . '/Fixtures/CommandsWithInvalidEntries');
+
+        $this->assertCount(1, $routes);
+        $this->assertArrayHasKey('qux:corge', $routes);
+        $this->assertEquals(
+            'Pop\Console\Test\Fixtures\CommandsWithInvalidEntries\QuxCommand', $routes['qux:corge']['controller']
+        );
+    }
+
     public function testAddFromRoutes()
     {
         $app = new Application(['routes' => [
