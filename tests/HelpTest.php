@@ -158,4 +158,25 @@ class HelpTest extends TestCase
         $this->assertStringContainsString("\x1b[1;36m--verbose\x1b[0m", $result);
     }
 
+    public function testRenderWithRawTrueSkipsColorEscapes()
+    {
+        $command = new Command(name: 'user edit', params: '<id> --verbose', help: 'Edit a user.');
+        $help    = new Help();
+
+        $result = $help->render(
+            [$command],
+            true,
+            null,
+            '    ',
+            80,
+            [Color::BOLD_BLUE, Color::YELLOW, Color::BOLD_MAGENTA, Color::BOLD_CYAN]
+        );
+
+        // When $raw = true, the result should NOT contain ANSI escape codes
+        $this->assertStringNotContainsString("\x1b[", $result);
+        // But should still contain the actual text
+        $this->assertStringContainsString('user edit', $result);
+        $this->assertStringContainsString('<id> --verbose', $result);
+    }
+
 }

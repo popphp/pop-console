@@ -151,7 +151,7 @@ class AlertTest extends TestCase
 
     public function testAlertBox3()
     {
-        $alert  = new Alert('    ', null);
+        $alert  = new Alert('    ', null, 160, 4);
         $result = $alert->alertBox('Hello World. This is a longer alert. This is a longer alert. This is a longer alert. This is a longer alert. This is a longer alert. This is a longer alert. This is a longer alert. This is a longer alert. This is a longer alert. This is a longer alert.');
 
         $this->assertTrue(str_contains($result, "   -------------------"));
