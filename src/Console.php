@@ -1276,34 +1276,12 @@ class Console
     public function displayHelp(bool $raw = false, ?string $subCommand = null): void
     {
         $this->response = null;
-        $registry       = $this->commands->all();
-        $commands       = [];
-        $commandLengths = [];
 
         if ($this->header !== null) {
             $this->response .= $this->formatTemplate($this->header);
         }
 
-        foreach ($registry as $key => $command) {
-            if ($this->matchesSubCommand($command, $subCommand)) {
-                [$label, $length]     = $this->formatHelpLabel($command, $raw);
-                $commands[$key]       = $this->getIndent() . $label;
-                $commandLengths[$key] = $length;
-            }
-        }
-
-        $maxLength = (!empty($commandLengths)) ? max($commandLengths) : 0;
-        $wrapped   = false;
-        $total     = count($commands);
-        $i         = 0;
-
-        foreach ($commands as $key => $command) {
-            [$row, $wrapped] = $this->buildHelpRow(
-                $registry[$key], $command, $commandLengths[$key], $maxLength, ($i == $total - 1), $wrapped
-            );
-            $this->response .= $row;
-            $i++;
-        }
+        $this->response .= (new Help())->render($this->commands->all(), $raw, $subCommand, $this->getIndent(), $this->wrap, $this->helpColors);
 
         if ($this->footer !== null) {
             $this->response .= $this->formatTemplate($this->footer);
@@ -1326,147 +1304,6 @@ class Console
      * @param  ?string                  $subCommand
      * @return bool
      */
-    protected function matchesSubCommand(Command\CommandInterface $command, ?string $subCommand = null): bool
-    {
-        if (empty($subCommand)) {
-            return true;
-        }
-
-        $name = (string)$command->getName();
-
-        if ($command->hasScriptName()) {
-            $prefix = $command->getScriptName() . ' ';
-            if (str_starts_with($name, $prefix)) {
-                $name = substr($name, strlen($prefix));
-            }
-        }
-
-        return str_starts_with($name, $subCommand);
-    }
-
-    /**
-     * Format a registered command's name/params into a colorized help label
-     *
-     * @param  Command\CommandInterface $command
-     * @param  bool                     $raw
-     * @return array
-     */
-    protected function formatHelpLabel(Command\CommandInterface $command, bool $raw): array
-    {
-        $name   = $command->getName();
-        $params = $command->getParams();
-        $length = strlen((string)$name);
-
-        if (count($this->helpColors) > 0) {
-            $name = $this->colorizeHelpName((string)$name, $raw);
-        }
-
-        if ($params !== null) {
-            $length += (strlen((string)$params) + 1);
-            $name   .= $this->colorizeHelpParams($params, $raw);
-        }
-
-        return [$name, $length];
-    }
-
-    /**
-     * Colorize a command name (and its sub-name, if space-separated) for the help screen
-     *
-     * @param  string $name
-     * @param  bool   $raw
-     * @return string
-     */
-    protected function colorizeHelpName(string $name, bool $raw): string
-    {
-        if (str_contains($name, ' ')) {
-            $name1 = substr($name, 0, strpos($name, ' '));
-            $name2 = substr($name, strpos($name, ' ') + 1);
-            if (isset($this->helpColors[0])) {
-                $name1 = Color::colorize($name1, $this->helpColors[0], null, $raw);
-            }
-            if (isset($this->helpColors[1])) {
-                $name2 = Color::colorize($name2, $this->helpColors[1], null, $raw);
-            }
-            return $name1 . ' ' . $name2;
-        } else if (isset($this->helpColors[0])) {
-            return Color::colorize($name, $this->helpColors[0], null, $raw);
-        }
-
-        return $name;
-    }
-
-    /**
-     * Colorize a command's params for the help screen
-     *
-     * @param  string $params
-     * @param  bool   $raw
-     * @return string
-     */
-    protected function colorizeHelpParams(string $params, bool $raw): string
-    {
-        if (str_contains($params, '-') && str_contains($params, '<')) {
-            $pars        = explode(' ', $params);
-            $optionFirst = str_contains($pars[0], '-');
-            $colorIndex  = 2;
-            $colored     = '';
-            foreach ($pars as $p) {
-                if (isset($this->helpColors[3]) &&
-                    (($optionFirst) && str_contains($p, '<')) || ((!$optionFirst) && str_contains($p, '-'))) {
-                    $colorIndex = 3;
-                }
-                $colored .= ' ' . ((isset($this->helpColors[$colorIndex])) ?
-                        Color::colorize($p, $this->helpColors[$colorIndex], null, $raw) : $p);
-            }
-            return $colored;
-        }
-
-        return ' ' . ((isset($this->helpColors[2])) ?
-                Color::colorize($params, $this->helpColors[2], null, $raw) : $params);
-    }
-
-    /**
-     * Build one command's row for the help screen, wrapping its help text if needed
-     *
-     * @param  Command\CommandInterface $command
-     * @param  string                   $label
-     * @param  int                      $length
-     * @param  int                      $maxLength
-     * @param  bool                     $isLast
-     * @param  bool                     $wrapped
-     * @return array
-     */
-    protected function buildHelpRow(
-        Command\CommandInterface $command, string $label, int $length, int $maxLength, bool $isLast, bool $wrapped
-    ): array
-    {
-        if (!$command->hasHelp()) {
-            return [$label . $command->getHelp() . PHP_EOL, $wrapped];
-        }
-
-        $help = $command->getHelp();
-        $pad  = ($length < $maxLength) ?
-            str_repeat(' ', $maxLength - $length) . '    ' : '    ';
-
-        if (strlen((string)$command . $pad . $help) <= $this->wrap) {
-            return [$label . $pad . $help . PHP_EOL, false];
-        }
-
-        $row    = ($wrapped) ? '' : PHP_EOL;
-        $offset = $this->wrap - strlen((string)$command . $pad);
-        $lines  = explode(PHP_EOL, wordwrap($help, $offset, PHP_EOL));
-        foreach ($lines as $lineIndex => $line) {
-            $row .= ($lineIndex == 0) ?
-                $label . $pad . $line . PHP_EOL :
-                $this->getIndent() . str_repeat(' ', strlen((string)$command)) . $pad . $line . PHP_EOL;
-        }
-
-        if (!$isLast) {
-            $row .= PHP_EOL;
-        }
-
-        return [$row, true];
-    }
-
     /**
      * Clear the console
      *
