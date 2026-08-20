@@ -161,7 +161,6 @@ class CommandRegistryTest extends TestCase
     public function testDetectNamespaceReturnsNullWhenFileDoesNotExist()
     {
         $method = new \ReflectionMethod(CommandRegistry::class, 'detectNamespace');
-        $method->setAccessible(true);
 
         $this->assertNull($method->invoke(null, __DIR__ . '/Fixtures/DoesNotExist/Missing.php'));
     }
