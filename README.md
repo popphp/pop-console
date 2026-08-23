@@ -2,7 +2,7 @@ pop-console
 ===========
 
 [![Build Status](https://github.com/popphp/pop-console/workflows/phpunit/badge.svg)](https://github.com/popphp/pop-console/actions)
-[![Coverage Status](http://cc.popphp.org/coverage.php?comp=pop-console)](http://cc.popphp.org/pop-console/)
+[![Coverage Status](https://cc.popphp.org/coverage.php?comp=pop-console)](https://cc.popphp.org/pop-console/)
 
 [![Join the chat at https://discord.gg/TZjgT74U7E](https://media.popphp.org/img/discord.svg)](https://discord.gg/TZjgT74U7E)
 
