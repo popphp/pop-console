@@ -28,6 +28,83 @@ class Help
 {
 
     /**
+     * Gap between a command label and its help text
+     * @var string
+     */
+    protected string $helpGap = '    ';
+
+    /**
+     * Minimum width of help text a command must leave room for, within the wrap width,
+     * to set the help column; longer commands get their help bumped to the next line
+     * @var int
+     */
+    protected int $minHelpWidth = 40;
+
+    /**
+     * Set the gap between a command label and its help text
+     *
+     * @param  string $helpGap
+     * @return static
+     */
+    public function setHelpGap(string $helpGap): static
+    {
+        $this->helpGap = $helpGap;
+        return $this;
+    }
+
+    /**
+     * Set the minimum help text width
+     *
+     * @param  int $minHelpWidth
+     * @return static
+     */
+    public function setMinHelpWidth(int $minHelpWidth): static
+    {
+        $this->minHelpWidth = $minHelpWidth;
+        return $this;
+    }
+
+    /**
+     * Get the gap between a command label and its help text
+     *
+     * @return string
+     */
+    public function getHelpGap(): string
+    {
+        return $this->helpGap;
+    }
+
+    /**
+     * Get the minimum help text width
+     *
+     * @return int
+     */
+    public function getMinHelpWidth(): int
+    {
+        return $this->minHelpWidth;
+    }
+
+    /**
+     * Has a gap between a command label and its help text
+     *
+     * @return bool
+     */
+    public function hasHelpGap(): bool
+    {
+        return !empty($this->helpGap);
+    }
+
+    /**
+     * Has a minimum help text width
+     *
+     * @return bool
+     */
+    public function hasMinHelpWidth(): bool
+    {
+        return !empty($this->minHelpWidth);
+    }
+
+    /**
      * Render the help screen body for a set of commands
      *
      * @param  array   $commands
@@ -52,20 +129,39 @@ class Help
             }
         }
 
-        $maxLength = (!empty($commandLengths)) ? max($commandLengths) : 0;
+        // Only commands that leave room for $minHelpWidth of help text set the help column,
+        // so one command with a long list of options doesn't squeeze every other row's help
+        $columnLengths = array_filter($commandLengths, function ($length) use ($wrap) {
+            return !$this->isTooLong($length, $wrap);
+        });
+
+        $maxLength = (!empty($columnLengths)) ? max($columnLengths) : 0;
         $wrapped   = false;
         $total     = count($rows);
         $i         = 0;
 
         foreach ($rows as $key => $row) {
             [$line, $wrapped] = $this->buildHelpRow(
-                $commands[$key], $row, $commandLengths[$key], $maxLength, ($i == $total - 1), $wrapped, $indent, $wrap
+                $commands[$key], $row, $commandLengths[$key], $maxLength, ($i == $total - 1), $wrapped, $indent, $wrap,
+                $this->isTooLong($commandLengths[$key], $wrap)
             );
             $response .= $line;
             $i++;
         }
 
         return $response;
+    }
+
+    /**
+     * Determine if a command label is too long to leave $minHelpWidth of help text on the same line
+     *
+     * @param  int  $length
+     * @param  ?int $wrap
+     * @return bool
+     */
+    protected function isTooLong(int $length, ?int $wrap): bool
+    {
+        return (($wrap !== null) && (($length + strlen($this->helpGap) + $this->minHelpWidth) > $wrap));
     }
 
     /**
@@ -194,11 +290,12 @@ class Help
      * @param  bool                     $wrapped
      * @param  string                   $indent
      * @param  ?int                     $wrap
+     * @param  bool                     $bumped
      * @return array
      */
     protected function buildHelpRow(
         Command\CommandInterface $command, string $label, int $length, int $maxLength, bool $isLast, bool $wrapped,
-        string $indent, ?int $wrap
+        string $indent, ?int $wrap, bool $bumped = false
     ): array
     {
         if (!$command->hasHelp()) {
@@ -207,19 +304,25 @@ class Help
 
         $help = $command->getHelp();
         $pad  = ($length < $maxLength) ?
-            str_repeat(' ', $maxLength - $length) . '    ' : '    ';
+            str_repeat(' ', $maxLength - $length) . $this->helpGap : $this->helpGap;
 
-        if (strlen((string)$command . $pad . $help) <= $wrap) {
+        if (($wrap === null) || (!$bumped && (strlen((string)$command . $pad . $help) <= $wrap))) {
             return [$label . $pad . $help . PHP_EOL, false];
         }
 
-        $row    = ($wrapped) ? '' : PHP_EOL;
-        $offset = $wrap - strlen((string)$command . $pad);
-        $lines  = explode(PHP_EOL, wordwrap($help, $offset, PHP_EOL));
+        $row        = ($wrapped) ? '' : PHP_EOL;
+        $helpIndent = $indent . str_repeat(' ', $maxLength + strlen($this->helpGap));
+        $offset     = max(1, $wrap - $maxLength - strlen($this->helpGap));
+        $lines      = explode(PHP_EOL, wordwrap($help, $offset, PHP_EOL));
+
+        if ($bumped) {
+            $row .= $label . PHP_EOL;
+        }
+
         foreach ($lines as $lineIndex => $line) {
-            $row .= ($lineIndex == 0) ?
+            $row .= (($lineIndex == 0) && !$bumped) ?
                 $label . $pad . $line . PHP_EOL :
-                $indent . str_repeat(' ', strlen((string)$command)) . $pad . $line . PHP_EOL;
+                $helpIndent . $line . PHP_EOL;
         }
 
         if (!$isLast) {

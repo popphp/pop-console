@@ -91,6 +91,18 @@ class Console
     protected array $helpColors = [];
 
     /**
+     * Minimum help text width, below which a command's help is bumped to the next line
+     * @var int
+     */
+    protected int $minHelpWidth = 40;
+
+    /**
+     * Gap between a command and its help text on the help screen
+     * @var string
+     */
+    protected string $helpGap = '    ';
+
+    /**
      * SERVER array
      * @var array
      */
@@ -306,6 +318,30 @@ class Console
     }
 
     /**
+     * Set the minimum help text width
+     *
+     * @param  int $minHelpWidth
+     * @return Console
+     */
+    public function setMinHelpWidth(int $minHelpWidth): Console
+    {
+        $this->minHelpWidth = $minHelpWidth;
+        return $this;
+    }
+
+    /**
+     * Set the gap between a command and its help text on the help screen
+     *
+     * @param  string $helpGap
+     * @return Console
+     */
+    public function setHelpGap(string $helpGap): Console
+    {
+        $this->helpGap = $helpGap;
+        return $this;
+    }
+
+    /**
      * Set the input stream for prompt input
      *
      * @param  mixed $stream
@@ -444,6 +480,26 @@ class Console
     }
 
     /**
+     * Has help gap
+     *
+     * @return bool
+     */
+    public function hasHelpGap(): bool
+    {
+        return !empty($this->helpGap);
+    }
+
+    /**
+     * Has minimum help text width
+     *
+     * @return bool
+     */
+    public function hasMinHelpWidth(): bool
+    {
+        return !empty($this->minHelpWidth);
+    }
+
+    /**
      * Get the console header
      *
      * @param  bool $formatted
@@ -483,6 +539,26 @@ class Console
     public function getHelpColors(): array
     {
         return $this->helpColors;
+    }
+
+    /**
+     * Get the gap between a command and its help text on the help screen
+     *
+     * @return string
+     */
+    public function getHelpGap(): string
+    {
+        return $this->helpGap;
+    }
+
+    /**
+     * Get the minimum help text width
+     *
+     * @return int
+     */
+    public function getMinHelpWidth(): int
+    {
+        return $this->minHelpWidth;
     }
 
     /**
@@ -1253,7 +1329,7 @@ class Console
             $this->response .= $this->formatTemplate($this->header);
         }
 
-        $this->response .= (new Help())->render($this->commands->all(), $raw, $subCommand, $this->getIndent(), $this->wrap, $this->helpColors);
+        $this->response .= (new Help())->setMinHelpWidth($this->minHelpWidth)->setHelpGap($this->helpGap)->render($this->commands->all(), $raw, $subCommand, $this->getIndent(), $this->wrap, $this->helpColors);
 
         if ($this->footer !== null) {
             $this->response .= $this->formatTemplate($this->footer);

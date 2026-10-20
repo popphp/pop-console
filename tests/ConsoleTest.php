@@ -92,6 +92,71 @@ class ConsoleTest extends TestCase
         $this->assertEquals(4, count($console->getHelpColors()));
     }
 
+    public function testSetAndGetMinHelpWidth()
+    {
+        $console = new Console();
+        $this->assertEquals(40, $console->getMinHelpWidth());
+        $this->assertTrue($console->hasMinHelpWidth());
+
+        $console->setMinHelpWidth(50);
+        $this->assertEquals(50, $console->getMinHelpWidth());
+
+        $console->setMinHelpWidth(0);
+        $this->assertFalse($console->hasMinHelpWidth());
+    }
+
+    public function testDisplayHelpUsesMinHelpWidth()
+    {
+        $console = new Console(80, '    ');
+        if (!$console->hasWidth()) {
+            $console->setWidth(160)->setHeight(50);
+        }
+        $console->addCommand(new Command(name: 'short', help: 'Short help'));
+        $console->addCommand(new Command(name: 'medium:command', params: '[--option-one=] [--two=]', help: 'Medium help'));
+        $console->setMinHelpWidth(50);
+
+        ob_start();
+        $console->help();
+        $result = ob_get_clean();
+
+        $this->assertEquals(
+            '    short    Short help' . PHP_EOL .
+            PHP_EOL .
+            '    medium:command [--option-one=] [--two=]' . PHP_EOL .
+            '             Medium help' . PHP_EOL,
+            $result
+        );
+    }
+
+    public function testSetAndGetHelpGap()
+    {
+        $console = new Console();
+        $this->assertEquals('    ', $console->getHelpGap());
+        $this->assertTrue($console->hasHelpGap());
+
+        $console->setHelpGap('  ');
+        $this->assertEquals('  ', $console->getHelpGap());
+
+        $console->setHelpGap('');
+        $this->assertFalse($console->hasHelpGap());
+    }
+
+    public function testDisplayHelpUsesHelpGap()
+    {
+        $console = new Console(80, '    ');
+        if (!$console->hasWidth()) {
+            $console->setWidth(160)->setHeight(50);
+        }
+        $console->addCommand(new Command(name: 'hello', params: '-v', help: 'This is the help'));
+        $console->setHelpGap(' - ');
+
+        ob_start();
+        $console->help();
+        $result = ob_get_clean();
+
+        $this->assertEquals('    hello -v - This is the help' . PHP_EOL, $result);
+    }
+
     public function testGetServer()
     {
         $console = new Console();

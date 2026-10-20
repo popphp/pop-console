@@ -656,6 +656,40 @@ $console->help();
     roles --list [<id>]    This is the roles help screen
 ```
 
+Help text is column-aligned against the longest command, and wraps to the console's `wrap` width.
+A command whose name and params are too long to leave at least 40 characters of help text on the same
+line doesn't push that column out for everyone else — its help is bumped to the next line instead, still
+aligned to the help column:
+
+```text
+    users --list [<id>]    This is the users help screen
+
+    roles --list [<id>] [--name=] [--email=] [--active=] [--created-before=] [--created-after=]
+                           This is the roles help screen
+```
+
+That 40-character minimum is configurable with `setMinHelpWidth()` (and `getMinHelpWidth()`/
+`hasMinHelpWidth()`). A lower value lets longer commands keep their help on the same line, at the cost of
+a narrower help column; a higher value bumps commands sooner:
+
+```php
+$console->setMinHelpWidth(30);
+```
+
+The gap between a command and its help text (4 spaces by default) is configurable the same way, with
+`setHelpGap()`/`getHelpGap()`/`hasHelpGap()`. Help text that wraps or is bumped to the next line is
+indented by the gap's width in spaces, so a gap with visible characters only appears on each command's
+first line:
+
+```php
+$console->setHelpGap(' - ');
+```
+
+```text
+    users --list [<id>] - This is the users help screen
+    roles --list [<id>] - This is the roles help screen
+```
+
 Passing a command name to `help()` returns just that command's help string instead of printing
 the full screen:
 

@@ -43,6 +43,160 @@ class HelpTest extends TestCase
         );
     }
 
+    public function testRenderBumpsHelpOfCommandTooLongForHelpColumn()
+    {
+        $short = new Command(name: 'help', help: 'Show the help screen');
+        $long  = new Command(
+            name: 'fail:set', params: '[--system=] [--operation=] [--answer=] [--delay=] [--times=]', help: 'Set a failure'
+        );
+        $help  = new Help();
+
+        $result = $help->render([$short, $long], false, null, '    ', 80, []);
+
+        $this->assertEquals(
+            '    help    Show the help screen' . PHP_EOL .
+            PHP_EOL .
+            '    fail:set [--system=] [--operation=] [--answer=] [--delay=] [--times=]' . PHP_EOL .
+            '            Set a failure' . PHP_EOL,
+            $result
+        );
+    }
+
+    public function testRenderWrapsBumpedHelpAtHelpColumn()
+    {
+        $short = new Command(name: 'list', help: 'List things');
+        $long  = new Command(
+            name: 'this:is:a:very:long:command:name:with:no:options:at:all:really',
+            help: 'This help text is long enough that it has to wrap across more than one line.'
+        );
+        $last  = new Command(name: 'show', help: 'Show a thing');
+        $help  = new Help();
+
+        $result = $help->render([$short, $long, $last], false, null, '    ', 60, []);
+
+        $this->assertEquals(
+            '    list    List things' . PHP_EOL .
+            PHP_EOL .
+            '    this:is:a:very:long:command:name:with:no:options:at:all:really' . PHP_EOL .
+            '            This help text is long enough that it has to wrap' . PHP_EOL .
+            '            across more than one line.' . PHP_EOL .
+            PHP_EOL .
+            '    show    Show a thing' . PHP_EOL,
+            $result
+        );
+    }
+
+    public function testSetAndGetMinHelpWidth()
+    {
+        $help = new Help();
+        $this->assertEquals(40, $help->getMinHelpWidth());
+        $this->assertTrue($help->hasMinHelpWidth());
+
+        $this->assertSame($help, $help->setMinHelpWidth(50));
+        $this->assertEquals(50, $help->getMinHelpWidth());
+
+        $help->setMinHelpWidth(0);
+        $this->assertFalse($help->hasMinHelpWidth());
+    }
+
+    public function testRenderUsesMinHelpWidthToDecideWhenToBump()
+    {
+        $short  = new Command(name: 'short', help: 'Short help');
+        $medium = new Command(name: 'medium:command', params: '[--option-one=] [--two=]', help: 'Medium help');
+
+        // 'medium:command [--option-one=] [--two=]' is 39 chars: 39 + 4 + 40 > 80 at the default
+        $this->assertEquals(
+            '    short    Short help' . PHP_EOL .
+            PHP_EOL .
+            '    medium:command [--option-one=] [--two=]' . PHP_EOL .
+            '             Medium help' . PHP_EOL,
+            (new Help())->render([$short, $medium], false, null, '    ', 80, [])
+        );
+
+        // ...but 39 + 4 + 30 <= 80, so it fits and sets the column
+        $this->assertEquals(
+            '    short' . str_repeat(' ', 34) . '    Short help' . PHP_EOL .
+            '    medium:command [--option-one=] [--two=]    Medium help' . PHP_EOL,
+            (new Help())->setMinHelpWidth(30)->render([$short, $medium], false, null, '    ', 80, [])
+        );
+    }
+
+    public function testSetAndGetHelpGap()
+    {
+        $help = new Help();
+        $this->assertEquals('    ', $help->getHelpGap());
+        $this->assertTrue($help->hasHelpGap());
+
+        $this->assertSame($help, $help->setHelpGap('  '));
+        $this->assertEquals('  ', $help->getHelpGap());
+
+        $help->setHelpGap('');
+        $this->assertFalse($help->hasHelpGap());
+    }
+
+    public function testRenderUsesHelpGap()
+    {
+        $short = new Command(name: 'help', help: 'Show the help screen');
+        $long  = new Command(
+            name: 'fail:set', params: '[--system=] [--operation=] [--answer=] [--delay=] [--times=]', help: 'Set a failure'
+        );
+
+        $result = (new Help())->setHelpGap(' :: ')->render([$short, $long], false, null, '    ', 80, []);
+
+        $this->assertEquals(
+            '    help :: Show the help screen' . PHP_EOL .
+            PHP_EOL .
+            '    fail:set [--system=] [--operation=] [--answer=] [--delay=] [--times=]' . PHP_EOL .
+            '            Set a failure' . PHP_EOL,
+            $result
+        );
+    }
+
+    public function testRenderHelpGapCountsTowardsMinHelpWidth()
+    {
+        $short  = new Command(name: 'short', help: 'Short help');
+        $medium = new Command(name: 'medium:command', params: '[--option-one=] [--two=]', help: 'Medium help');
+
+        // 39 + 1 + 40 = 80 fits within a wrap of 80 with a 1-char gap, where the default 4-char gap wouldn't
+        $this->assertEquals(
+            '    short' . str_repeat(' ', 34) . ' Short help' . PHP_EOL .
+            '    medium:command [--option-one=] [--two=] Medium help' . PHP_EOL,
+            (new Help())->setHelpGap(' ')->render([$short, $medium], false, null, '    ', 80, [])
+        );
+    }
+
+    public function testRenderTooLongCommandWithoutHelpPrintsLabelOnly()
+    {
+        $short = new Command(name: 'help', help: 'Show the help screen');
+        $long  = new Command(name: 'fail:set', params: '[--system=] [--operation=] [--answer=] [--delay=] [--times=]');
+        $help  = new Help();
+
+        $result = $help->render([$short, $long], false, null, '    ', 80, []);
+
+        $this->assertEquals(
+            '    help    Show the help screen' . PHP_EOL .
+            '    fail:set [--system=] [--operation=] [--answer=] [--delay=] [--times=]' . PHP_EOL,
+            $result
+        );
+    }
+
+    public function testRenderWithNullWrapKeepsHelpOnOneLine()
+    {
+        $short = new Command(name: 'help', help: 'Show the help screen');
+        $long  = new Command(
+            name: 'fail:set', params: '[--system=] [--operation=] [--answer=] [--delay=] [--times=]', help: 'Set a failure'
+        );
+        $help  = new Help();
+
+        $result = $help->render([$short, $long], false, null, '    ', null, []);
+
+        $this->assertEquals(
+            '    help' . str_repeat(' ', 65) . '    Show the help screen' . PHP_EOL .
+            '    fail:set [--system=] [--operation=] [--answer=] [--delay=] [--times=]    Set a failure' . PHP_EOL,
+            $result
+        );
+    }
+
     public function testRenderWithSubCommandFiltersToMatchingNamespace()
     {
         $dbMigrate  = new Command(name: 'db:migrate', help: 'Migrate the database.');
