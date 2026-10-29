@@ -1260,13 +1260,19 @@ class Console
     public function append(?string $text = null, bool $newline = true, bool $margin = true): Console
     {
         if (!empty($this->wrap)) {
-            $lines = (strlen((string)$text) > $this->wrap) ?
-                explode(PHP_EOL, wordwrap($text, $this->wrap, PHP_EOL)) : [$text];
+            $wrap = $this->wrap;
         } else if (!empty($this->width)) {
-            $lines = (strlen((string)$text) > ($this->width - ((int)$this->margin * 2))) ?
-                explode(PHP_EOL, wordwrap($text, ($this->width - ((int)$this->margin * 2)), PHP_EOL)) : [$text];
+            $wrap = $this->width - ((int)$this->margin * 2);
         } else {
-            $lines = [$text];
+            $wrap = null;
+        }
+
+        // Split on the text's own line endings first (\r\n or \n, regardless of platform), so every
+        // line gets the margin whether or not the text is long enough to need wrapping
+        $lines = [];
+        foreach (preg_split('/\r\n|\n/', (string)$text) as $textLine) {
+            $lines = array_merge($lines, (($wrap !== null) && (strlen($textLine) > $wrap)) ?
+                explode(PHP_EOL, wordwrap($textLine, $wrap, PHP_EOL)) : [$textLine]);
         }
 
         foreach ($lines as $line) {
@@ -1329,7 +1335,9 @@ class Console
             $this->response .= $this->formatTemplate($this->header);
         }
 
-        $this->response .= (new Help())->setMinHelpWidth($this->minHelpWidth)->setHelpGap($this->helpGap)->render($this->commands->all(), $raw, $subCommand, $this->getIndent(), $this->wrap, $this->helpColors);
+        $this->response .= (new Help())->setMinHelpWidth($this->minHelpWidth)
+            ->setHelpGap($this->helpGap)
+            ->render($this->commands->all(), $raw, $subCommand, $this->getIndent(), $this->wrap, $this->helpColors);
 
         if ($this->footer !== null) {
             $this->response .= $this->formatTemplate($this->footer);

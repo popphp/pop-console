@@ -371,6 +371,62 @@ class ConsoleTest extends TestCase
         $this->assertEquals('    Hello World' . PHP_EOL, $result);
     }
 
+    public function testAppendIndentsEveryLineOfShortMultiLineText()
+    {
+        $console = new Console(80, 4);
+        $console->append("{\n    \"code\": 400\n}");
+
+        ob_start();
+        $console->send();
+        $result = ob_get_clean();
+
+        $this->assertEquals(
+            '    {' . PHP_EOL . '        "code": 400' . PHP_EOL . '    }' . PHP_EOL, $result
+        );
+    }
+
+    public function testAppendIndentsEveryLineWithNoWrapOrWidth()
+    {
+        $console = new Console(null);
+        $console->setWidth(0);
+        $console->append("Line one\nLine two");
+
+        ob_start();
+        $console->send();
+        $result = ob_get_clean();
+
+        $this->assertEquals('    Line one' . PHP_EOL . '    Line two' . PHP_EOL, $result);
+    }
+
+    public function testAppendSplitsCrlfLineEndings()
+    {
+        $console = new Console(80, 4);
+        $console->append("Line one\r\nLine two");
+
+        ob_start();
+        $console->send();
+        $result = ob_get_clean();
+
+        $this->assertEquals('    Line one' . PHP_EOL . '    Line two' . PHP_EOL, $result);
+    }
+
+    public function testAppendWrapsEachLineOfLongCrlfText()
+    {
+        $console = new Console(20, 4);
+        $console->append("Short\r\nThis line is long enough to wrap");
+
+        ob_start();
+        $console->send();
+        $result = ob_get_clean();
+
+        $this->assertEquals(
+            '    Short' . PHP_EOL .
+            '    This line is long' . PHP_EOL .
+            '    enough to wrap' . PHP_EOL,
+            $result
+        );
+    }
+
     public function testSendWithHeaderNotYetSent()
     {
         $console = new Console();

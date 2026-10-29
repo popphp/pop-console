@@ -135,7 +135,9 @@ $console->write(
 ### Newline and Margin
 
 By default, calling the `append()` or `write()` methods will produce the margin value at the beginning
-of the content and a newline at the end of the content. If this is not the desired behavior, boolean flags
+of each line of the content and a newline at the end of the content. Multi-line content (for example,
+pretty-printed JSON) is split on its own line endings — `\n` or `\r\n`, whatever platform it came from —
+so every line gets the margin, whether or not it's long enough to need wrapping. If this is not the desired behavior, boolean flags
 can be passed to control this:
 
 ```php
